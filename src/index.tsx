@@ -4,7 +4,12 @@ import { Provider } from "react-redux";
 import { store } from "./app/store";
 import App from "./app/App";
 import reportWebVitals from "./reportWebVitals";
+
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "./app/material";
 import "./css/index.css";
+import CssBaseline from "@mui/material/CssBaseline";
+import { BrowserRouter as Router } from "react-router-dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -12,7 +17,12 @@ if (!container) throw new Error("Root element not found");
 createRoot(container).render(
   <React.StrictMode>
     <Provider store={store}>
-      <App />
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <App />
+        </Router>
+      </ThemeProvider>
     </Provider>
   </React.StrictMode>,
 );
