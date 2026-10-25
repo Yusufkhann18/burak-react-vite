@@ -154,3 +154,75 @@
     }
   }
 }
+
+.other-navbar {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  background: url("/public/img/banner.webp");
+  background-size: cover;
+}
+
+.other-navbar a {
+  text-decoration: none;
+}
+
+.other-navbar .hover-line a {
+  color: #f8f8ff;
+  z-index: 100;
+}
+.other-navbar .underline {
+  display: block;
+  content: "";
+  border-bottom: 2px solid #d7b686;
+}
+
+.other-navbar .hover-line::after {
+  content: "";
+  display: block;
+  border-bottom: #d7b686 solid 2px;
+  transform: scaleX(0);
+  transition: transform 250ms ease-in-out;
+}
+
+.other-navbar .hover-line:hover:after {
+  transform: scaleX(1);
+}
+
+.other-navbar div.hover-line:after {
+  transform-origin: 0% 50%;
+}
+
+.other-navbar .navbar-container {
+  margin-top: 55px;
+}
+
+.other-navbar .navbar-header {
+  height: 50px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.other-navbar .navbar-logo {
+  width: 125px;
+  height: 30px;
+}
+
+.other-navbar .navbar-links {
+  flex-direction: row;
+  justify-content: space-between;
+  min-width: 700px;
+  align-items: center;
+}
+
+.other-navbar .navbar-login.MuiButton-root {
+  background: #3776cc;
+  color: #f8f8ff;
+}
+
+.other-navbar .navbar-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 24px;
+}

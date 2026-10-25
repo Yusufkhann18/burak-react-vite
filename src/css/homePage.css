@@ -1,0 +1,10 @@
+.home-page {
+  padding-bottom: 96px;
+  background: #f8f8ff;
+}
+
+@media (max-width: 700px) {
+  .home-page {
+    padding-bottom: 56px;
+  }
+}
