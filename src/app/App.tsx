@@ -1,7 +1,8 @@
+import { PageStateProvider } from "./components/pages/PageState";
 import { Route, Switch, useLocation } from "react-router-dom";
 import HomePage from "./screens/homePage";
 
-import { ProductsPage } from "./screens/productsPage";
+import { ProductsPage, ProductDetailPage } from "./screens/productsPage";
 import { OrdersPage } from "./screens/ordersPage";
 import { UserPage } from "./screens/userPage";
 import { HelpPage } from "./screens/helpPage";
@@ -10,13 +11,18 @@ import { HomeNavbar } from "./components/headers/HomeNavbar";
 import { OtherNavbar } from "./components/headers/OtherNavbar";
 import "../css/app.css";
 import "../css/navbar.css";
+import "../css/home.css";
+import "../css/pages.css";
 function App() {
   const location = useLocation();
   return (
-    <>
+    <PageStateProvider>
       {location.pathname === "/" ? <HomeNavbar /> : <OtherNavbar />}
 
       <Switch>
+        <Route exact path="/products/:productId">
+          <ProductDetailPage />
+        </Route>
         <Route exact path="/products">
           <ProductsPage />
         </Route>
@@ -34,7 +40,7 @@ function App() {
         </Route>
       </Switch>
       <Footer />
-    </>
+    </PageStateProvider>
   );
 }
 

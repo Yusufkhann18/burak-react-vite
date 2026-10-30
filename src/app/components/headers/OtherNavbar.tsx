@@ -1,8 +1,10 @@
+import { usePageState } from "../pages/PageState";
 import { Box, Button, Container, Stack } from "@mui/material";
 import { NavLink } from "react-router-dom";
 
 export function OtherNavbar() {
   const authMember = null;
+  const { basket } = usePageState();
   return (
     <div className="other-navbar">
       <Container className="navbar-container">
@@ -15,7 +17,9 @@ export function OtherNavbar() {
 
           <Stack className="navbar-links">
             <Box className="hover-line">
-              <NavLink to="/">Home</NavLink>
+              <NavLink exact to="/">
+                Home
+              </NavLink>
             </Box>
 
             <Box className="hover-line">
@@ -24,21 +28,17 @@ export function OtherNavbar() {
               </NavLink>
             </Box>
 
-            {authMember ? (
-              <Box className="hover-line">
-                <NavLink to="/orders" activeClassName="underline">
-                  Orders
-                </NavLink>
-              </Box>
-            ) : null}
+            <Box className="hover-line">
+              <NavLink to="/orders" activeClassName="underline">
+                Orders
+              </NavLink>
+            </Box>
 
-            {authMember ? (
-              <Box className="hover-line">
-                <NavLink to="/member-page" activeClassName="underline">
-                  My Page
-                </NavLink>
-              </Box>
-            ) : null}
+            <Box className="hover-line">
+              <NavLink to="/member-page" activeClassName="underline">
+                My Page
+              </NavLink>
+            </Box>
 
             <Box className="hover-line">
               <NavLink to="/help" activeClassName="underline">
@@ -46,7 +46,14 @@ export function OtherNavbar() {
               </NavLink>
             </Box>
 
-            {/* BASKET */}
+            <NavLink to="/products?basket=1" className="navbar-basket" aria-label="Shopping basket">
+              <img src="/icons/shopping-cart.svg" alt="" />
+              {basket.length > 0 && (
+                <span className="basket-count">
+                  {basket.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </NavLink>
             {!authMember ? (
               <Box>
                 <Button variant="contained" className="navbar-login">
@@ -54,11 +61,7 @@ export function OtherNavbar() {
                 </Button>
               </Box>
             ) : (
-              <img
-                className="navbar-avatar"
-                src="/icons/default-user.svg"
-                aria-haspopup="true"
-              />
+              <img className="navbar-avatar" src="/img/pages/profile.webp" alt="Profil rasmi" />
             )}
           </Stack>
         </Stack>

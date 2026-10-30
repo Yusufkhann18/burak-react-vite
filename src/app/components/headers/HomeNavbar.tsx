@@ -2,7 +2,7 @@ import { Box, Button, Container, Stack } from "@mui/material";
 import { NavLink } from "react-router-dom";
 
 export function HomeNavbar() {
-  const authMember = null;
+  const authMember = true;
 
   return (
     <div className="home-navbar">
@@ -49,7 +49,13 @@ export function HomeNavbar() {
               </NavLink>
             </Box>
 
-            {/* BASKET */}
+            <NavLink
+              to="/orders"
+              className="navbar-basket"
+              aria-label="Shopping basket"
+            >
+              <img src="/icons/shopping-cart.svg" alt="" />
+            </NavLink>
             {!authMember ? (
               <Box>
                 <Button variant="contained" className="navbar-login">
@@ -59,8 +65,8 @@ export function HomeNavbar() {
             ) : (
               <img
                 className="navbar-avatar"
-                src="/icons/default-user.svg"
-                aria-haspopup="true"
+                src="/img/pages/profile.webp"
+                alt="Profil rasmi"
               />
             )}
           </Stack>

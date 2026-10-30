@@ -1,0 +1,152 @@
+/* HomePage header: keep the existing JSX classes and leave OtherNavbar independent. */
+.home-navbar {
+  background-image: url("/img/home/banner.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.home-navbar .navbar-container.MuiContainer-root {
+  width: calc(100% - 48px);
+  max-width: 1300px;
+  padding: 0;
+}
+.home-navbar .navbar-header {
+  height: 37px;
+}
+.home-navbar .navbar-links {
+  min-width: 0;
+  width: 666px;
+  font-family: "Roboto Serif", Georgia, serif;
+  font-size: 16px;
+}
+.home-navbar .navbar-login.MuiButton-root {
+  width: 79px;
+  height: 37px;
+  font-size: 16px;
+  font-weight: 400;
+}
+.home-navbar .navbar-container .header-frame {
+  margin-top: 144px;
+}
+.home-navbar .navbar-container .header-frame .detail .head-main-txt {
+  font-family: "Roboto Serif", Georgia, serif;
+  font-style: normal;
+  letter-spacing: -0.015em;
+}
+.home-navbar .navbar-container .header-frame .detail .well-txt {
+  font-family: "Roboto Serif", Georgia, serif;
+  font-style: normal;
+  letter-spacing: -0.015em;
+}
+.home-navbar .navbar-container .header-frame .detail .service-txt {
+  font-family: "Roboto Serif", Georgia, serif;
+  font-style: normal;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.home-navbar .navbar-container .header-frame .logo-frame .logo-img {
+  background-image: url("/img/home/logo.webp");
+  filter: none;
+}
+.home-navbar .navbar-basket {
+  display: flex;
+  align-items: center;
+}
+.home-navbar .navbar-basket img {
+  display: block;
+  width: 25px;
+  height: 25px;
+  filter: brightness(0) invert(1);
+}
+/* Allow loaded font metrics to wrap without overlapping the following text. */
+.home-navbar .navbar-container .header-frame .detail .head-main-txt {
+  width: 510px;
+  max-width: 100%;
+  height: auto;
+  min-height: 150px;
+  font-size: 48px;
+}
+.home-navbar .navbar-container .header-frame .detail .well-txt {
+  height: auto;
+  min-height: 45px;
+  font-size: 30px;
+}
+.home-navbar .navbar-container .header-frame .detail .signup .signup-btn {
+  background: #1976d2;
+  font-family: "Poppins", Arial, sans-serif;
+}
+@media (max-width: 1100px) {
+  .home-navbar {
+    height: auto;
+    min-height: 680px;
+  }
+  .home-navbar .navbar-container.MuiContainer-root {
+    height: auto;
+    margin-bottom: 64px;
+  }
+  .home-navbar .navbar-links {
+    width: 60%;
+    gap: 16px;
+  }
+  .home-navbar .navbar-container .header-frame {
+    height: auto;
+    margin-top: 110px;
+    gap: 20px;
+  }
+  .home-navbar .navbar-container .header-frame .detail {
+    width: 50%;
+  }
+  .home-navbar .navbar-container .header-frame .detail .head-main-txt {
+    width: 100%;
+    height: auto;
+    min-height: 150px;
+    font-size: clamp(32px, 4vw, 50px);
+    line-height: 1.18;
+  }
+  .home-navbar .navbar-container .header-frame .detail .well-txt {
+    width: 100%;
+    height: auto;
+    font-size: clamp(24px, 2.9vw, 36px);
+    line-height: 1.2;
+  }
+  .home-navbar .navbar-container .header-frame .logo-frame {
+    width: 50%;
+    height: auto;
+    aspect-ratio: 690 / 419;
+  }
+}
+@media (max-width: 650px) {
+  .home-navbar .navbar-container.MuiContainer-root {
+    width: calc(100% - 32px);
+    margin-top: 28px;
+  }
+  .home-navbar .navbar-header {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 28px;
+  }
+  .home-navbar .navbar-links {
+    width: 100%;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .home-navbar .navbar-container .header-frame {
+    margin-top: 64px;
+    flex-direction: column;
+  }
+  .home-navbar .navbar-container .header-frame .detail {
+    width: 100%;
+  }
+  .home-navbar .navbar-container .header-frame .detail .head-main-txt {
+    max-width: 450px;
+    min-height: 0;
+    margin-bottom: 24px;
+    font-size: 38px;
+  }
+  .home-navbar .navbar-container .header-frame .detail .signup {
+    margin-top: 32px;
+  }
+  .home-navbar .navbar-container .header-frame .logo-frame {
+    width: min(100%, 440px);
+    margin: 24px auto 0;
+  }
+}
