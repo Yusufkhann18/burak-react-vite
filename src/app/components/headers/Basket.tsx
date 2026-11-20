@@ -1,24 +1,19 @@
 import { Badge, Button, IconButton, Popover } from "@mui/material";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
-import { products, usePageState } from "../pages/PageState";
+import { usePageState } from "../pages/PageState";
 import "../../../css/navbar-basket.css";
 
 export function Basket() {
-  const { basket, change, remove } = usePageState();
+  const { basket, basketItems, catalogStatus, retryCatalog, change, remove } = usePageState();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const dialogId = useId();
   const titleId = `${dialogId}-title`;
   const isOpen = anchor !== null;
   const close = () => setAnchor(null);
 
-  const items = basket.map(({ id, quantity }) => ({
-    id,
-    quantity,
-    product: products.find((product) => product.id === id)!,
-  }));
-  const count = items.reduce((sum, { quantity }) => sum + quantity, 0);
-  const total = items.reduce(
+  const count = basketItems.reduce((sum, { quantity }) => sum + quantity, 0);
+  const total = basketItems.reduce(
     (sum, { product, quantity }) => sum + product.price * quantity,
     0,
   );
@@ -59,11 +54,11 @@ export function Basket() {
             <img src="/icons/close.svg" alt="" width="16" height="16" />
           </IconButton>
         </div>
-        {items.length > 0 ? (
+        {basketItems.length > 0 && (
           <ul className="navbar-basket-items">
-            {items.map(({ id, product, quantity }) => (
+            {basketItems.map(({ id, product, quantity }) => (
               <li key={id}>
-                <img src={`/img/pages/${product.image}.webp`} alt="" />
+                <img src={product.image} alt="" />
                 <div className="navbar-basket-item">
                   <strong>{product.name}</strong>
                   <span>{`$${product.price} × ${quantity}`}</span>
@@ -77,7 +72,7 @@ export function Basket() {
                     <output aria-label={`${product.name} quantity`}>{quantity}</output>
                     <Button
                       aria-label={`Increase ${product.name}`}
-                      disabled={quantity >= 99}
+                      disabled={quantity >= Math.min(99, product.stock)}
                       onClick={() => change(id, 1)}
                     >
                       +
@@ -94,15 +89,32 @@ export function Basket() {
               </li>
             ))}
           </ul>
-        ) : (
+        )}
+        {catalogStatus === "loading" && (
+          <div className="navbar-basket-empty">
+            <output>Checking basket items…</output>
+          </div>
+        )}
+        {catalogStatus === "error" && (
+          <p className="navbar-basket-empty">
+            Could not check basket items.
+            <Button onClick={retryCatalog}>Try again</Button>
+          </p>
+        )}
+        {catalogStatus === "ready" && basket.length > basketItems.length && (
+          <p className="navbar-basket-empty">Some saved items are no longer available.</p>
+        )}
+        {catalogStatus === "ready" && basket.length === 0 && (
           <p className="navbar-basket-empty">Your basket is empty.</p>
         )}
         <div className="navbar-basket-actions">
-          <strong aria-live="polite">{`Total $${total}`}</strong>
+          {catalogStatus === "ready" && (
+            <strong aria-live="polite">{`Total $${Number(total.toFixed(2))}`}</strong>
+          )}
           <Button component={Link} to="/products?basket=1" onClick={close}>
             View basket
           </Button>
-          {items.length > 0 && (
+          {basketItems.length > 0 && (
             <Button component={Link} to="/orders" variant="contained" onClick={close}>
               Order
             </Button>

@@ -1,51 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-export const products = [
-  {
-    id: "spicy-noodles",
-    name: "Korean Spicy Soup",
-    image: "noodles",
-    category: "DISH",
-    price: 15,
-    views: 21,
-  },
-  {
-    id: "vegetarian",
-    name: "Vegetarian Soup",
-    image: "vegetarian-soup",
-    category: "SALAD",
-    price: 15,
-    views: 18,
-  },
-  {
-    id: "salmon",
-    name: "Salmon Pasta",
-    image: "salmon-pasta",
-    category: "DISH",
-    price: 15,
-    views: 12,
-  },
-  { id: "rice", name: "Kebuli Rice", image: "rice", category: "DISH", price: 15, views: 32 },
-  {
-    id: "spicy-soup",
-    name: "Korean Spicy Soup",
-    image: "spicy-soup",
-    category: "DISH",
-    price: 15,
-    views: 17,
-  },
-  { id: "steak", name: "Vegetarian Soup", image: "steak", category: "DISH", price: 15, views: 11 },
-  { id: "salad", name: "Salmon Pasta", image: "salad", category: "SALAD", price: 15, views: 8 },
-  {
-    id: "kebuli",
-    name: "Kebuli Rice",
-    image: "kebuli-rice",
-    category: "DISH",
-    price: 15,
-    views: 26,
-  },
-];
-export type Product = (typeof products)[number];
+import { getProducts } from "../../api/catalog";
+import type { Product } from "../../api/catalog";
+
 export type BasketItem = { id: string; quantity: number };
+type CatalogStatus = "loading" | "ready" | "error";
+type Catalog = { products: Product[]; status: CatalogStatus; attempt: number };
+
 export type Profile = {
   name: string;
   description: string;
@@ -65,14 +25,13 @@ function readBasket(): BasketItem[] {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(key) || "[]");
     return Array.isArray(value)
-      ? value.filter(
-          (x): x is BasketItem =>
-            !!x &&
-            typeof x.id === "string" &&
-            products.some((p) => p.id === x.id) &&
-            Number.isInteger(x.quantity) &&
-            x.quantity > 0 &&
-            x.quantity <= 99,
+      ? value.filter((item): item is BasketItem =>
+          !!item &&
+          typeof item.id === "string" &&
+          item.id.length > 0 &&
+          Number.isInteger(item.quantity) &&
+          item.quantity > 0 &&
+          item.quantity <= 99,
         )
       : [];
   } catch {
@@ -90,6 +49,10 @@ export function readProfile(): Profile {
 }
 const Context = createContext<{
   basket: BasketItem[];
+  basketItems: (BasketItem & { product: Product })[];
+  products: Product[];
+  catalogStatus: CatalogStatus;
+  retryCatalog: () => void;
   add: (id: string) => void;
   change: (id: string, amount: number) => void;
   remove: (id: string) => void;
@@ -97,6 +60,31 @@ const Context = createContext<{
 } | null>(null);
 export function PageStateProvider({ children }: { children: ReactNode }) {
   const [basket, setBasket] = useState(readBasket);
+  const [catalog, setCatalog] = useState<Catalog>({
+    products: [],
+    status: "loading",
+    attempt: 0,
+  });
+  const { products, status: catalogStatus, attempt } = catalog;
+
+  useEffect(() => {
+    const request = new AbortController();
+    const settle = (status: "ready" | "error", results: Product[]) => {
+      if (request.signal.aborted) return;
+      setCatalog((current) =>
+        current.attempt === attempt ? { products: results, status, attempt } : current,
+      );
+    };
+    getProducts(request.signal).then(
+      (results) => settle("ready", results),
+      () => settle("error", []),
+    );
+    return () => request.abort();
+  }, [attempt]);
+
+  const retryCatalog = () =>
+    setCatalog((current) => ({ products: [], status: "loading", attempt: current.attempt + 1 }));
+
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(basket));
@@ -104,21 +92,49 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
       /* The basket still works in this session. */
     }
   }, [basket]);
-  const add = (id: string) =>
+
+  const productsById = new Map(products.map((product) => [product.id, product]));
+  const basketItems = basket.flatMap((item) => {
+    const product = productsById.get(item.id);
+    return product ? [{ ...item, product }] : [];
+  });
+  const stockLimit = (id: string) => Math.min(99, productsById.get(id)?.stock ?? 0);
+  const add = (id: string) => {
+    const limit = stockLimit(id);
+    if (limit < 1) return;
     setBasket((items) =>
       items.some((x) => x.id === id)
-        ? items.map((x) => (x.id === id ? { ...x, quantity: Math.min(99, x.quantity + 1) } : x))
+        ? items.map((x) => (x.id === id && x.quantity < limit ? { ...x, quantity: x.quantity + 1 } : x))
         : [...items, { id, quantity: 1 }],
     );
-  const change = (id: string, amount: number) =>
+  };
+  const change = (id: string, amount: number) => {
+    const limit = stockLimit(id);
     setBasket((items) =>
       items
-        .map((x) => (x.id === id ? { ...x, quantity: Math.min(99, x.quantity + amount) } : x))
-        .filter((x) => x.quantity > 0),
+        .map((item) => {
+          if (item.id !== id) return item;
+          const quantity = amount > 0
+            ? Math.min(item.quantity + amount, Math.max(item.quantity, limit))
+            : item.quantity + amount;
+          return { ...item, quantity };
+        })
+        .filter((item) => item.quantity > 0),
     );
+  };
   const remove = (id: string) => setBasket((items) => items.filter((item) => item.id !== id));
   return (
-    <Context.Provider value={{ basket, add, change, remove, clear: () => setBasket([]) }}>
+    <Context.Provider value={{
+      basket,
+      basketItems,
+      products,
+      catalogStatus,
+      retryCatalog,
+      add,
+      change,
+      remove,
+      clear: () => setBasket([]),
+    }}>
       {children}
     </Context.Provider>
   );

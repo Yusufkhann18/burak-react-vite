@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { products, usePageState } from "../../components/pages/PageState";
+import { usePageState } from "../../components/pages/PageState";
 import { ProfileCard } from "../../components/pages/ProfileCard";
 import "../../../css/orders.css";
 type Status = "paused" | "process" | "finished";
@@ -10,9 +10,9 @@ type Order = {
   items: { name: string; price: number; quantity: number; image: string }[];
 };
 const sampleItems = [
-  { name: "Steak", price: 10, quantity: 2, image: "steak" },
-  { name: "Fried chicken", price: 10, quantity: 2, image: "salmon-pasta" },
-  { name: "Winner", price: 10, quantity: 2, image: "rice" },
+  { name: "Steak", price: 10, quantity: 2, image: "/img/pages/steak.webp" },
+  { name: "Fried chicken", price: 10, quantity: 2, image: "/img/pages/salmon-pasta.webp" },
+  { name: "Winner", price: 10, quantity: 2, image: "/img/pages/rice.webp" },
 ];
 const initialOrders: Order[] = ["paused", "process", "finished"].flatMap((status) =>
   [1, 2].map((i) => ({ id: `demo-${status}-${i}`, status: status as Status, items: sampleItems })),
@@ -21,15 +21,17 @@ export function OrdersPage() {
   const [tab, setTab] = useState<Status>("paused");
   const [orders, setOrders] = useState(initialOrders);
   const [message, setMessage] = useState("");
-  const { basket, clear } = usePageState();
-  const current: Order | undefined = basket.length
+  const { basketItems, clear } = usePageState();
+  const current: Order | undefined = basketItems.length
     ? {
         id: "basket",
         status: "paused",
-        items: basket.map((item) => {
-          const p = products.find((p) => p.id === item.id)!;
-          return { name: p.name, price: p.price, quantity: item.quantity, image: p.image };
-        }),
+        items: basketItems.map(({ product, quantity }) => ({
+          name: product.name,
+          price: product.price,
+          quantity,
+          image: product.image,
+        })),
       }
     : undefined;
   const visible = [...(current ? [current] : []), ...orders].filter(
@@ -75,9 +77,9 @@ export function OrdersPage() {
             ))}
           </div>
           <p className="demo-notice">Design preview · sample orders · no real payments</p>
-          <p role="status" className="page-status">
-            {message}
-          </p>
+          <div className="page-status">
+            <output>{message}</output>
+          </div>
           <div
             id="order-list"
             role="tabpanel"
@@ -91,7 +93,7 @@ export function OrdersPage() {
                   {order.id === "basket" && <h2>Your basket</h2>}
                   {order.items.map((item, index) => (
                     <div className="order-row" key={`${item.name}-${index}`}>
-                      <img src={`/img/pages/${item.image}.webp`} alt="" />
+                      <img src={item.image} alt="" />
                       <h3>{item.name}</h3>
                       <span>${item.price}</span>
                       <span>× {item.quantity}</span>

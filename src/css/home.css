@@ -37,6 +37,20 @@
   outline: 3px solid #3776cc;
   outline-offset: 5px;
 }
+.home-card-state {
+  display: block;
+  margin: 32px auto 0;
+  text-align: center;
+}
+.home-card-state button {
+  padding: 8px 16px;
+  border: 1px solid #343434;
+  border-radius: 6px;
+  background: #fff;
+  color: #343434;
+  font: inherit;
+  cursor: pointer;
+}
 .home-statistics {
   min-height: 236px;
   display: flex;
@@ -124,11 +138,16 @@
 }
 .popular-subject h3 {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 20px;
   font-weight: 500;
 }
 .dish-views {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 5px;
   font-size: 12px;
@@ -169,8 +188,16 @@
 .popular-description img {
   width: 15px;
   height: 19px;
+  flex-shrink: 0;
   object-fit: contain;
   filter: brightness(0) invert(1);
+}
+.popular-description span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .home-fresh {
   min-height: 605px;
@@ -220,6 +247,10 @@
 }
 .fresh-detail h3 {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 16px;
   font-weight: 500;
 }
@@ -227,6 +258,7 @@
   border-left: 2px solid #d7b686;
   padding-left: 10px;
   font-size: 16px;
+  white-space: nowrap;
 }
 .fresh-detail .dish-views {
   margin-left: auto;
@@ -267,6 +299,10 @@
 }
 .user-card figcaption {
   height: 29px;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   line-height: 29px;
   text-align: center;
   font-size: 20px;
