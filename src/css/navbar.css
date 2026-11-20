@@ -1,0 +1,234 @@
+.home-navbar {
+  width: 100%;
+  height: 773px;
+  display: flex;
+  background: url("/public/img/banner.webp");
+  background-size: cover;
+}
+
+.home-navbar a {
+  text-decoration: none;
+}
+
+.home-navbar .hover-line a {
+  color: #f8f8ff;
+  z-index: 100;
+}
+.home-navbar .underline {
+  display: block;
+  content: "";
+  border-bottom: 2px solid #d7b686;
+}
+
+.home-navbar .hover-line::after {
+  content: "";
+  display: block;
+  border-bottom: #d7b686 solid 2px;
+  transform: scaleX(0);
+  transition: transform 250ms ease-in-out;
+}
+
+.home-navbar .hover-line:hover:after {
+  transform: scaleX(1);
+}
+
+.home-navbar div.hover-line:after {
+  transform-origin: 0% 50%;
+}
+
+.home-navbar .navbar-container {
+  margin-top: 55px;
+  height: 642px;
+}
+
+.home-navbar .navbar-header {
+  height: 50px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.home-navbar .navbar-logo {
+  width: 125px;
+  height: 30px;
+}
+
+.home-navbar .navbar-links {
+  flex-direction: row;
+  justify-content: space-between;
+  min-width: 700px;
+  align-items: center;
+}
+
+.home-navbar .navbar-login.MuiButton-root {
+  background: #3776cc;
+  color: #f8f8ff;
+}
+
+.home-navbar .navbar-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 24px;
+}
+
+.home-navbar .navbar-container .header-frame {
+  margin-top: 142px;
+  height: 462px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  .detail {
+    width: 510px;
+    display: flex;
+    flex-direction: column;
+    .head-main-txt {
+      width: 450px;
+      height: 150px;
+      color: rgba(248, 248, 255, 1);
+
+      font-family: "Roboto Serif";
+      font-style: Medium;
+      font-size: 50px;
+      font-weight: 500;
+      line-height: 59px;
+      letter-spacing: -1.5%;
+      text-align: left;
+    }
+    .well-txt {
+      width: 510px;
+      height: 45px;
+      color: rgba(215, 182, 134, 1);
+
+      font-family: "Roboto Serif";
+      font-style: Regular;
+      font-size: 36px;
+      font-weight: 400;
+      line-height: 42px;
+      letter-spacing: -1.5%;
+      text-align: left;
+    }
+    .service-txt {
+      margin-top: 23px;
+      width: 155px;
+      height: 25px;
+      color: rgba(213, 213, 213, 1);
+
+      font-family: "Roboto Serif";
+      font-style: Regular;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 23px;
+      letter-spacing: -1.5%;
+      text-align: left;
+    }
+    .signup {
+      margin-top: 73px;
+      .signup-btn {
+        width: 210px;
+        height: 60px;
+        border-radius: 4px;
+        background: #1976d2;
+        color: rgba(248, 248, 255, 1);
+
+        font-family: "Poppins";
+        font-style: Regular;
+        font-size: 17px;
+        font-weight: 400;
+        line-height: 26px;
+        letter-spacing: 0%;
+        text-align: center;
+      }
+    }
+  }
+  .logo-frame {
+    margin-top: 43px;
+    width: 690px;
+    height: 419px;
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      background: url("/public/img/logo.webp");
+      background-size: contain;
+      background-repeat: no-repeat;
+      filter: invert(25%);
+    }
+  }
+}
+
+.other-navbar {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  background: url("/public/img/banner.webp");
+  background-size: cover;
+}
+
+.other-navbar a {
+  text-decoration: none;
+}
+
+.other-navbar .hover-line a {
+  color: #f8f8ff;
+  z-index: 100;
+}
+.other-navbar .underline {
+  display: block;
+  content: "";
+  border-bottom: 2px solid #d7b686;
+}
+
+.other-navbar .hover-line::after {
+  content: "";
+  display: block;
+  border-bottom: #d7b686 solid 2px;
+  transform: scaleX(0);
+  transition: transform 250ms ease-in-out;
+}
+
+.other-navbar .hover-line:hover:after {
+  transform: scaleX(1);
+}
+
+.other-navbar div.hover-line:after {
+  transform-origin: 0% 50%;
+}
+
+.other-navbar .navbar-container {
+  margin-top: 55px;
+}
+
+.other-navbar .navbar-header {
+  height: 50px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.other-navbar .navbar-logo {
+  width: 125px;
+  height: 30px;
+}
+
+.other-navbar .navbar-links {
+  flex-direction: row;
+  justify-content: space-between;
+  min-width: 700px;
+  align-items: center;
+}
+
+.other-navbar .navbar-login.MuiButton-root {
+  background: #3776cc;
+  color: #f8f8ff;
+}
+
+.other-navbar .navbar-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 24px;
+}
+
+.home-navbar .navbar-avatar,
+.other-navbar .navbar-avatar {
+  object-fit: cover;
+  border-radius: 50%;
+}

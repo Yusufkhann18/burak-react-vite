@@ -1,0 +1,206 @@
+.orders-page {
+  min-height: 1076px;
+  padding: 50px 0 100px;
+}
+.orders-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 821px) minmax(260px, 372px);
+  justify-content: space-between;
+  gap: 54px;
+}
+.order-tabs {
+  display: flex;
+  border-bottom: 2px solid #dedee4;
+  gap: 0;
+  padding-bottom: 10px;
+}
+.order-tabs button {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 9px 16px;
+  font-size: 14px;
+  color: #343434;
+}
+.order-tabs [aria-selected="true"] {
+  background: #343434;
+  color: #d7b686;
+}
+.demo-notice {
+  font-size: 12px;
+  color: #777;
+  margin: 12px 0 0;
+}
+.orders-page .page-status {
+  font-size: 12px;
+  min-height: 18px;
+  margin: 4px 0 14px;
+}
+.order-list {
+  display: grid;
+  gap: 24px;
+}
+.order-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 20px 35px 0;
+  box-shadow: 0 5px 16px #00000014;
+}
+.order-card h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+.order-row {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) 50px 36px 55px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.order-row img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.order-row h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+.order-row > span,
+.order-row > strong {
+  font-size: 16px;
+  font-weight: 400;
+}
+.order-summary {
+  border-top: 1px solid #eee;
+  padding: 20px 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+.order-summary > div:first-child {
+  display: flex;
+  gap: 18px;
+  font-size: 12px;
+}
+.order-summary b {
+  display: block;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.order-actions {
+  display: flex;
+  gap: 18px;
+}
+.order-cancel {
+  color: #c43131;
+  background: #fff;
+  border: 1px solid #df7777;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 13px !important;
+}
+.finished-label {
+  color: #457d48;
+  font-size: 13px;
+}
+.order-sidebar {
+  padding-top: 76px;
+}
+.payment-preview {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 20px 20px;
+  margin-top: 24px;
+  box-shadow: 0 4px 14px #00000015;
+}
+.payment-placeholder {
+  min-width: 0;
+  padding: 10px;
+  background: #f4f4f7;
+  border: 1px solid #dedee5;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.payment-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.payment-brands {
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+  margin: 24px 0 18px;
+}
+.payment-brands img {
+  width: 38px;
+  height: 26px;
+  object-fit: contain;
+}
+.payment-preview small {
+  font-size: 11px;
+  color: #777;
+}
+@media (max-width: 1050px) {
+  .orders-layout {
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+  .order-card {
+    padding-inline: 20px;
+  }
+  .order-row {
+    grid-template-columns: 40px minmax(0, 1fr) 36px 28px 40px;
+    gap: 8px;
+  }
+  .order-row img {
+    width: 40px;
+    height: 40px;
+  }
+  .order-row h3 {
+    font-size: 16px;
+  }
+  .order-row > span,
+  .order-row > strong {
+    font-size: 13px;
+  }
+}
+@media (max-width: 760px) {
+  .orders-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-sidebar {
+    padding-top: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .payment-preview {
+    margin-top: 0;
+  }
+  .order-tabs button {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .order-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .order-card {
+    padding-inline: 14px;
+  }
+  .order-summary > div:first-child {
+    gap: 12px;
+  }
+  .order-row h3 {
+    font-size: 14px;
+  }
+}

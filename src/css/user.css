@@ -1,0 +1,131 @@
+.user-page {
+  min-height: 1212px;
+  padding: 50px 0 100px;
+}
+.user-layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 48px;
+}
+.user-layout .profile-card {
+  min-height: 430px;
+  padding-top: 40px;
+}
+.user-layout .profile-avatar {
+  width: 160px;
+}
+.user-layout .profile-avatar > img:first-child {
+  width: 160px;
+  height: 162px;
+}
+.profile-form {
+  padding: 40px;
+  border-radius: 18px;
+  background: #fff;
+  min-height: 770px;
+  box-shadow: 0 4px 18px #00000014;
+}
+.profile-upload {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  margin-bottom: 40px;
+}
+.profile-upload > img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.profile-upload input {
+  display: block;
+  font-size: 12px;
+  max-width: 100%;
+  margin-top: 8px;
+}
+.upload-button {
+  display: inline-flex;
+  padding: 8px 22px;
+  border: 1px solid #d7b686;
+  border-radius: 4px;
+  color: #9d793e;
+  font-size: 16px;
+  cursor: pointer;
+}
+.profile-upload p {
+  margin: 10px 0 0;
+  color: #777;
+  font-size: 14px;
+}
+.profile-upload small {
+  color: #777;
+  font-size: 12px;
+}
+.profile-fields {
+  display: grid;
+  gap: 22px;
+}
+.profile-fields label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+.profile-fields input,
+.profile-fields textarea {
+  width: 100%;
+  border: 1px solid #dddde5;
+  border-radius: 7px;
+  padding: 13px 16px;
+  background: #f8f8ff;
+  color: #343434;
+  font-size: 15px;
+  resize: vertical;
+}
+.profile-save {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 20px;
+  margin-top: 28px;
+}
+.profile-save p {
+  margin: 0;
+  font-size: 13px;
+}
+.profile-save .page-button {
+  min-width: 110px;
+  font-size: 18px;
+}
+@media (max-width: 950px) {
+  .user-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+  }
+  .profile-form {
+    padding: 24px;
+  }
+  .profile-upload {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  .user-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .user-layout .profile-card {
+    min-height: auto;
+  }
+  .profile-form {
+    min-height: auto;
+  }
+  .profile-upload {
+    gap: 18px;
+  }
+  .profile-upload > div {
+    min-width: 0;
+  }
+  .profile-save {
+    flex-wrap: wrap;
+  }
+}
