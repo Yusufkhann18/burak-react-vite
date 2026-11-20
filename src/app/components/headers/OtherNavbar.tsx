@@ -1,17 +1,16 @@
-import { usePageState } from "../pages/PageState";
 import { Box, Button, Container, Stack } from "@mui/material";
 import { NavLink } from "react-router-dom";
+import { Basket } from "./Basket";
 
 export function OtherNavbar() {
   const authMember = null;
-  const { basket } = usePageState();
   return (
     <div className="other-navbar">
       <Container className="navbar-container">
         <Stack className="navbar-header">
           <Box>
             <NavLink to="/">
-              <img className="navbar-logo" src="/icons/burak.svg" />
+              <img className="navbar-logo" src="/icons/burak.svg" alt="Burak" />
             </NavLink>
           </Box>
 
@@ -46,14 +45,7 @@ export function OtherNavbar() {
               </NavLink>
             </Box>
 
-            <NavLink to="/products?basket=1" className="navbar-basket" aria-label="Shopping basket">
-              <img src="/icons/shopping-cart.svg" alt="" />
-              {basket.length > 0 && (
-                <span className="basket-count">
-                  {basket.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
-              )}
-            </NavLink>
+            <Basket />
             {!authMember ? (
               <Box>
                 <Button variant="contained" className="navbar-login">

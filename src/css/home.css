@@ -102,6 +102,15 @@
   object-fit: cover;
   z-index: -1;
 }
+.popular-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to top, #0006, transparent 200px),
+    linear-gradient(to top, #000c, transparent 300px);
+}
 .popular-subject {
   position: absolute;
   left: 16px;

@@ -1,0 +1,102 @@
+.navbar-links .navbar-basket.MuiIconButton-root {
+  flex-shrink: 0;
+  padding: 6px;
+  color: #f8f8ff;
+}
+
+.navbar-basket.MuiIconButton-root img {
+  display: block;
+  width: 25px;
+  height: 25px;
+  filter: brightness(0) invert(1);
+}
+
+.navbar-basket-popover.MuiPaper-root {
+  width: 450px;
+  background: #f8f8ff;
+  color: #343434;
+  border-radius: 12px;
+  font-family: "Poppins", Arial, sans-serif;
+}
+
+.navbar-basket-heading,
+.navbar-basket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.navbar-basket-heading {
+  justify-content: space-between;
+  background: #d7b586;
+}
+
+.navbar-basket-heading h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.navbar-basket-items {
+  max-height: min(260px, 45vh);
+  margin: 0;
+  padding: 0 16px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.navbar-basket-items li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.navbar-basket-items li + li {
+  border-top: 1px solid #e2ddd5;
+}
+
+.navbar-basket-items li > img {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.navbar-basket-item {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.navbar-basket-item > span {
+  color: #ae0000;
+  font-size: 0.875rem;
+}
+
+.navbar-basket-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar-basket-quantity .MuiButton-root {
+  min-width: 32px;
+  padding: 2px 6px;
+  font-size: 1rem;
+}
+
+.navbar-basket-empty {
+  margin: 0;
+  padding: 16px;
+}
+
+.navbar-basket-actions {
+  border-top: 1px solid #e2ddd5;
+}
+
+.navbar-basket-actions strong {
+  margin-right: auto;
+}

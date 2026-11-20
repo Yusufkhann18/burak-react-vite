@@ -47,16 +47,6 @@
   background-image: url("/img/home/logo.webp");
   filter: none;
 }
-.home-navbar .navbar-basket {
-  display: flex;
-  align-items: center;
-}
-.home-navbar .navbar-basket img {
-  display: block;
-  width: 25px;
-  height: 25px;
-  filter: brightness(0) invert(1);
-}
 /* Allow loaded font metrics to wrap without overlapping the following text. */
 .home-navbar .navbar-container .header-frame .detail .head-main-txt {
   width: 510px;
@@ -126,6 +116,7 @@
   }
   .home-navbar .navbar-links {
     width: 100%;
+    flex-wrap: wrap;
     gap: 10px;
     font-size: 14px;
   }

@@ -152,28 +152,6 @@
   gap: 20px;
   font-family: "Roboto Serif", Georgia, serif;
 }
-.other-navbar .navbar-basket img {
-  width: 25px;
-  height: 25px;
-  display: block;
-  filter: brightness(0) invert(1);
-}
-.other-navbar .navbar-basket {
-  position: relative;
-}
-.other-navbar .basket-count {
-  position: absolute;
-  right: -12px;
-  top: -10px;
-  border-radius: 20px;
-  background: #d7b686;
-  color: #343434;
-  font:
-    11px "Poppins",
-    sans-serif;
-  min-width: 18px;
-  text-align: center;
-}
 @media (max-width: 900px) {
   .other-navbar .navbar-links {
     width: auto;

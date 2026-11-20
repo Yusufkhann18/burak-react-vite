@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import { beforeEach, test, expect } from "vitest";
@@ -23,13 +23,49 @@ test("menu search, empty categories and basket quantity work", () => {
   fireEvent.click(screen.getByRole("button", { name: /SEARCH/ }));
   expect(screen.getAllByRole("button", { name: "Add Kebuli Rice to basket" })).toHaveLength(2);
   fireEvent.click(screen.getAllByRole("button", { name: "Add Kebuli Rice to basket" })[0]);
-  fireEvent.click(screen.getByRole("link", { name: "Shopping basket" }));
+  fireEvent.click(screen.getByRole("link", { name: "Basket (1)" }));
   expect(screen.getByRole("heading", { name: "Your basket" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Increase Kebuli Rice" }));
   expect(JSON.parse(localStorage.getItem("burak-page-basket-v1")!)[0].quantity).toBe(2);
   fireEvent.click(screen.getByRole("link", { name: "Close basket" }));
   fireEvent.click(screen.getByRole("button", { name: "DRINK" }));
   expect(screen.getByText("No products found")).toBeInTheDocument();
+});
+test("both headers open the shared basket with live quantities and an order link", async () => {
+  open("/");
+  const homeBasketButton = screen.getByRole("button", { name: "Shopping basket" });
+  homeBasketButton.focus();
+  fireEvent.click(homeBasketButton);
+  let basket = await screen.findByRole("dialog", { name: "Your basket" });
+  expect(within(basket).getByText("Your basket is empty.")).toBeVisible();
+
+  fireEvent.keyDown(basket, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await waitFor(() => expect(homeBasketButton).toHaveFocus());
+  fireEvent.click(screen.getAllByRole("link", { name: "Products" })[0]);
+
+  const addRice = screen.getAllByRole("button", { name: "Add Kebuli Rice to basket" })[0];
+  fireEvent.click(addRice);
+  fireEvent.click(screen.getByRole("button", { name: "Shopping basket (1)" }));
+  basket = await screen.findByRole("dialog", { name: "Your basket" });
+  expect(within(basket).getByText("Total $15")).toBeVisible();
+  fireEvent.click(within(basket).getByRole("button", { name: "Increase Kebuli Rice" }));
+  expect(within(basket).getByText("Total $30")).toBeVisible();
+  fireEvent.click(within(basket).getByRole("button", { name: "Decrease Kebuli Rice" }));
+  expect(within(basket).getByText("Total $15")).toBeVisible();
+  fireEvent.click(within(basket).getByRole("button", { name: "Remove Kebuli Rice" }));
+  expect(within(basket).getByText("Your basket is empty.")).toBeVisible();
+  expect(localStorage.getItem("burak-page-basket-v1")).toBe("[]");
+
+  fireEvent.click(within(basket).getByRole("button", { name: "Close basket" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  fireEvent.click(addRice);
+  fireEvent.click(screen.getByRole("button", { name: "Shopping basket (1)" }));
+  basket = await screen.findByRole("dialog", { name: "Your basket" });
+  fireEvent.click(within(basket).getByRole("link", { name: "Order" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.getByRole("tab", { name: "Paused Order" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Your basket" })).toBeVisible();
 });
 test("product details add to the shared basket", () => {
   open("/products/rice");

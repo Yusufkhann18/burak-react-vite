@@ -92,6 +92,7 @@ const Context = createContext<{
   basket: BasketItem[];
   add: (id: string) => void;
   change: (id: string, amount: number) => void;
+  remove: (id: string) => void;
   clear: () => void;
 } | null>(null);
 export function PageStateProvider({ children }: { children: ReactNode }) {
@@ -115,8 +116,9 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
         .map((x) => (x.id === id ? { ...x, quantity: Math.min(99, x.quantity + amount) } : x))
         .filter((x) => x.quantity > 0),
     );
+  const remove = (id: string) => setBasket((items) => items.filter((item) => item.id !== id));
   return (
-    <Context.Provider value={{ basket, add, change, clear: () => setBasket([]) }}>
+    <Context.Provider value={{ basket, add, change, remove, clear: () => setBasket([]) }}>
       {children}
     </Context.Provider>
   );
