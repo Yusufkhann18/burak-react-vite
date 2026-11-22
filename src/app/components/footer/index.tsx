@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 import "../../../css/footer.css";
 
 const socialIcons = [
@@ -9,6 +10,7 @@ const socialIcons = [
 ];
 
 export function Footer() {
+  const { member } = useAuth();
   return (
     <footer className="site-footer">
       <div className="footer-container">
@@ -36,6 +38,7 @@ export function Footer() {
             <ul className="footer-links">
               <li><Link to="/">Home</Link></li>
               <li><Link to="/products">Products</Link></li>
+              {member && <li><Link to="/orders">Orders</Link></li>}
               <li><Link to="/help">Help</Link></li>
             </ul>
           </nav>

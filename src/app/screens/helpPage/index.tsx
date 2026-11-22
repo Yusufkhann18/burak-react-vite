@@ -9,11 +9,19 @@ const faqs = [
   ],
   [
     "Is our details secure in this platform?",
-    "This preview stores profile information only in your browser. Online accounts and payments are not connected yet.",
+    "Sign in to access your Burak account. Contact the restaurant with questions about how your information is handled.",
   ],
   [
     "I am blocked, what should I do?",
     "Contact the restaurant using the Contact section so the team can help with your account.",
+  ],
+  [
+    "How can I cancel my order?",
+    "Check the order status in Orders. Contact the restaurant if you need help canceling.",
+  ],
+  [
+    "Who developed this platform?",
+    "ITC Global developers built the original Burak platform.",
   ],
 ];
 const terms = [
@@ -121,7 +129,7 @@ export function HelpPage() {
                 <textarea name="message" required rows={8} placeholder="Xabar" maxLength={4000} />
               </label>
               <div className="contact-submit">
-                <p role="status">{message}</p>
+                <output>{message}</output>
                 <button type="submit" className="page-button">
                   SEND
                 </button>

@@ -5,7 +5,7 @@ import { usePageState } from "../../components/pages/PageState"
 export default function PopularDishes() {
   const { products, catalogStatus, retryCatalog } = usePageState()
   const dishes = products
-    .slice()
+    .filter(dish => dish.category === "DISH")
     .sort((left, right) => right.views - left.views)
     .slice(0, 4)
 

@@ -37,27 +37,38 @@ export default function NewDishes() {
           <output className="home-card-state">No fresh dishes to show.</output>
         )}
         <div className="fresh-grid">
-          {dishes.map(dish => (
-            <Link to="/products" className="fresh-card" key={dish.id}>
-              <img
-                className="fresh-photo"
-                src={dish.image}
-                alt={dish.name}
-                loading="lazy"
-              />
-              {dish.size && <span className="dish-size">{dish.size} size</span>}
-              <div className="fresh-detail">
-                <h3>{dish.name}</h3>
-                <span className="dish-price">${dish.price}</span>
-                <span
-                  className="dish-views"
-                  aria-label={`${dish.views} ${dish.views === 1 ? "view" : "views"}`}
-                >
-                  {dish.views} <span className="eye-icon" aria-hidden="true" />
-                </span>
-              </div>
-            </Link>
-          ))}
+          {dishes.map(dish => {
+            const size =
+              dish.category === "DRINK"
+                ? dish.volume
+                  ? `${dish.volume} L`
+                  : ""
+                : dish.size
+                  ? `${dish.size} size`
+                  : ""
+            return (
+              <Link to="/products" className="fresh-card" key={dish.id}>
+                <img
+                  className="fresh-photo"
+                  src={dish.image}
+                  alt={dish.name}
+                  loading="lazy"
+                />
+                {size && <span className="dish-size">{size}</span>}
+                <div className="fresh-detail">
+                  <h3>{dish.name}</h3>
+                  <span className="dish-price">${dish.price}</span>
+                  <span
+                    className="dish-views"
+                    aria-label={`${dish.views} ${dish.views === 1 ? "view" : "views"}`}
+                  >
+                    {dish.views}{" "}
+                    <span className="eye-icon" aria-hidden="true" />
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </Container>
     </section>

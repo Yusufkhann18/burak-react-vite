@@ -19,6 +19,11 @@ to the backend with `/api` removed and `/uploads/*` with the path intact.
 Alternatively, set `VITE_BURAK_API_BASE_URL` at build time to the URL of a
 backend that permits requests from the frontend origin.
 
+Login, signup, logout, and authenticated profile edits use the backend's member
+API. Serve the frontend and API through the same origin to use the session cookie
+issued by Burak. A separate API origin must allow credentialed requests from the
+exact frontend origin and use compatible cookie settings.
+
 Entry: `src/index.tsx`. Page: `src/app/App.tsx`. Styles: `src/css/`.
 
 Redux: `src/features/counter/counterSlice.ts` provides `increment`, `decrement`,

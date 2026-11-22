@@ -1,9 +1,11 @@
-import { Box, Button, Container, Stack } from "@mui/material";
+import { Box, Container, Stack } from "@mui/material";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 import { Basket } from "./Basket";
+import { NavbarAccount } from "./NavbarAccount";
 
 export function OtherNavbar() {
-  const authMember = null;
+  const { member } = useAuth();
   return (
     <div className="other-navbar">
       <Container className="navbar-container">
@@ -27,17 +29,20 @@ export function OtherNavbar() {
               </NavLink>
             </Box>
 
-            <Box className="hover-line">
-              <NavLink to="/orders" activeClassName="underline">
-                Orders
-              </NavLink>
-            </Box>
-
-            <Box className="hover-line">
-              <NavLink to="/member-page" activeClassName="underline">
-                My Page
-              </NavLink>
-            </Box>
+            {member && (
+              <>
+                <Box className="hover-line">
+                  <NavLink to="/orders" activeClassName="underline">
+                    Orders
+                  </NavLink>
+                </Box>
+                <Box className="hover-line">
+                  <NavLink to="/member-page" activeClassName="underline">
+                    My Page
+                  </NavLink>
+                </Box>
+              </>
+            )}
 
             <Box className="hover-line">
               <NavLink to="/help" activeClassName="underline">
@@ -46,15 +51,7 @@ export function OtherNavbar() {
             </Box>
 
             <Basket />
-            {!authMember ? (
-              <Box>
-                <Button variant="contained" className="navbar-login">
-                  Login
-                </Button>
-              </Box>
-            ) : (
-              <img className="navbar-avatar" src="/img/pages/profile.webp" alt="Profil rasmi" />
-            )}
+            <NavbarAccount />
           </Stack>
         </Stack>
       </Container>

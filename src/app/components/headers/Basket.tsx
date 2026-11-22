@@ -2,10 +2,11 @@ import { Badge, Button, IconButton, Popover } from "@mui/material";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePageState } from "../pages/PageState";
+import { formatMoney, freeShippingThreshold, getDeliveryCost } from "../../basket/pricing";
 import "../../../css/navbar-basket.css";
 
 export function Basket() {
-  const { basket, basketItems, catalogStatus, retryCatalog, change, remove } = usePageState();
+  const { basket, basketItems, catalogStatus, retryCatalog, change, remove, clear } = usePageState();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const dialogId = useId();
   const titleId = `${dialogId}-title`;
@@ -13,10 +14,11 @@ export function Basket() {
   const close = () => setAnchor(null);
 
   const count = basketItems.reduce((sum, { quantity }) => sum + quantity, 0);
-  const total = basketItems.reduce(
+  const subtotal = basketItems.reduce(
     (sum, { product, quantity }) => sum + product.price * quantity,
     0,
   );
+  const shipping = getDeliveryCost(subtotal);
 
   return (
     <>
@@ -50,6 +52,7 @@ export function Basket() {
       >
         <div className="navbar-basket-heading">
           <h2 id={titleId}>Your basket</h2>
+          {basket.length > 0 && <Button onClick={clear}>Clear basket</Button>}
           <IconButton aria-label="Close basket" size="small" onClick={close}>
             <img src="/icons/close.svg" alt="" width="16" height="16" />
           </IconButton>
@@ -61,7 +64,7 @@ export function Basket() {
                 <img src={product.image} alt="" />
                 <div className="navbar-basket-item">
                   <strong>{product.name}</strong>
-                  <span>{`$${product.price} × ${quantity}`}</span>
+                  <span>{`${formatMoney(product.price)} × ${quantity}`}</span>
                   <div className="navbar-basket-quantity">
                     <Button
                       aria-label={`Decrease ${product.name}`}
@@ -107,10 +110,26 @@ export function Basket() {
         {catalogStatus === "ready" && basket.length === 0 && (
           <p className="navbar-basket-empty">Your basket is empty.</p>
         )}
+        {basketItems.length > 0 && (
+          <div className="navbar-basket-summary">
+            <p>
+              {shipping > 0
+                ? `Add ${formatMoney(freeShippingThreshold - subtotal)} for free shipping.`
+                : "Free shipping"}
+            </p>
+            <progress
+              aria-label="Free shipping progress"
+              value={Math.min(subtotal, freeShippingThreshold)}
+              max={freeShippingThreshold}
+            />
+            <dl>
+              <div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div>
+              <div><dt>Shipping</dt><dd>{shipping ? formatMoney(shipping) : "Free"}</dd></div>
+            </dl>
+            <strong aria-live="polite">{`Total ${formatMoney(subtotal + shipping)}`}</strong>
+          </div>
+        )}
         <div className="navbar-basket-actions">
-          {catalogStatus === "ready" && (
-            <strong aria-live="polite">{`Total $${Number(total.toFixed(2))}`}</strong>
-          )}
           <Button component={Link} to="/products?basket=1" onClick={close}>
             View basket
           </Button>

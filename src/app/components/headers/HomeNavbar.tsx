@@ -1,9 +1,11 @@
 import { Box, Button, Container, Stack } from "@mui/material";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 import { Basket } from "./Basket";
+import { NavbarAccount } from "./NavbarAccount";
 
 export function HomeNavbar() {
-  const authMember = true;
+  const { member, openSignup, status } = useAuth();
 
   return (
     <div className="home-navbar">
@@ -28,21 +30,21 @@ export function HomeNavbar() {
               </NavLink>
             </Box>
 
-            {authMember ? (
+            {member && (
               <Box className="hover-line">
                 <NavLink to="/orders" activeClassName="underline">
                   Orders
                 </NavLink>
               </Box>
-            ) : null}
+            )}
 
-            {authMember ? (
+            {member && (
               <Box className="hover-line">
                 <NavLink to="/member-page" activeClassName="underline">
                   My Page
                 </NavLink>
               </Box>
-            ) : null}
+            )}
 
             <Box className="hover-line">
               <NavLink to="/help" activeClassName="underline">
@@ -51,19 +53,7 @@ export function HomeNavbar() {
             </Box>
 
             <Basket />
-            {!authMember ? (
-              <Box>
-                <Button variant="contained" className="navbar-login">
-                  Login
-                </Button>
-              </Box>
-            ) : (
-              <img
-                className="navbar-avatar"
-                src="/img/pages/profile.webp"
-                alt="Profil rasmi"
-              />
-            )}
+            <NavbarAccount />
           </Stack>
         </Stack>
         <Stack className="header-frame">
@@ -72,11 +62,16 @@ export function HomeNavbar() {
             <Box className="well-txt">The Choice, not just a choice</Box>
             <Box className="service-txt">24 hours service</Box>
             <Box className="signup">
-              {!authMember ? (
-                <Button variant="contained" className="signup-btn">
+              {!member && (
+                <Button
+                  variant="contained"
+                  className="signup-btn"
+                  disabled={status === "loading"}
+                  onClick={openSignup}
+                >
                   Sign Up
                 </Button>
-              ) : null}
+              )}
             </Box>
           </Stack>
           <Box className="logo-frame">

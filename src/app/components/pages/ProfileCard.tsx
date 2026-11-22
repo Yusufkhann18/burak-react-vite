@@ -1,11 +1,14 @@
 import { readProfile, type Profile } from "./PageState";
+import { useAuth } from "../../auth/AuthProvider";
 export function ProfileCard({
-  profile = readProfile(),
+  profile: suppliedProfile,
   description = false,
 }: {
   profile?: Profile;
   description?: boolean;
 }) {
+  const { member } = useAuth();
+  const profile = suppliedProfile ?? member ?? readProfile();
   return (
     <aside className="profile-card">
       <div className="profile-avatar">

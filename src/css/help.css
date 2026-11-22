@@ -101,7 +101,7 @@
   align-items: flex-start;
   gap: 24px;
 }
-.contact-submit p {
+.contact-submit output {
   margin: 0;
   font-size: 14px;
   line-height: 1.7;

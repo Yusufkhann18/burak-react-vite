@@ -166,9 +166,16 @@
   color: #d7b686;
   margin-right: 8px;
 }
+.menu-stock,
+.menu-views {
+  display: block;
+  font-size: 14px;
+}
 .menu-stock {
   color: #8c2e24;
-  font-size: 14px;
+}
+.menu-views {
+  color: #555;
 }
 .menu-pagination {
   display: flex;
@@ -177,12 +184,20 @@
   gap: 12px;
   margin-top: 40px;
 }
-.menu-pagination button {
-  border: 0;
-  background: transparent;
+.menu-pagination button,
+.menu-pagination span {
+  display: inline-grid;
+  place-items: center;
   width: 40px;
   height: 40px;
   border-radius: 50%;
+}
+.menu-pagination button {
+  border: 1px solid #ddd;
+  background: transparent;
+}
+.menu-pagination button:disabled {
+  opacity: 0.45;
 }
 .menu-pagination [aria-current] {
   background: #c92624;
@@ -223,6 +238,10 @@
   width: 100%;
   height: auto;
   margin-top: 80px;
+}
+.restaurant-address {
+  margin: 28px 0 0;
+  text-align: center;
 }
 .basket-panel {
   position: fixed;
@@ -288,9 +307,13 @@
   width: 28px;
   height: 28px;
 }
-.basket-total {
+.basket-price-breakdown > div {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
+}
+.basket-price-breakdown dd {
+  margin: 0;
 }
 .text-button {
   border: 0;
@@ -315,6 +338,36 @@
   border-radius: 16px;
   box-shadow: 0 3px 5px #0005;
 }
+.product-gallery {
+  min-width: 0;
+}
+.product-gallery-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.product-gallery-thumbnails button {
+  display: block;
+  width: 70px;
+  height: 56px;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+}
+.product-gallery-thumbnails button[aria-pressed="true"] {
+  border-color: #ae211e;
+}
+.product-gallery-thumbnails img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
 .product-detail-card {
   background: #fff;
   border-radius: 16px;
@@ -324,8 +377,23 @@
     0 3px 5px #0002;
 }
 .product-detail-card h2 {
-  margin: 0 0 50px;
+  margin: 0 0 16px;
   font-size: 30px;
+}
+.product-restaurant {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-style: normal;
+}
+.product-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.product-attributes dd {
+  margin: 0;
+  font-weight: 600;
 }
 .product-rating {
   display: flex;

@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { usePageState } from "../../components/pages/PageState";
 import { ProfileCard } from "../../components/pages/ProfileCard";
+import { formatMoney, getDeliveryCost } from "../../basket/pricing";
 import "../../../css/orders.css";
 type Status = "paused" | "process" | "finished";
 type Order = {
   id: string;
   status: Status;
+  createdAt?: number;
   items: { name: string; price: number; quantity: number; image: string }[];
 };
 const sampleItems = [
@@ -39,9 +41,10 @@ export function OrdersPage() {
   );
   function advance(order: Order) {
     const status = order.status === "paused" ? "process" : "finished";
+    const createdAt = Date.now();
     setOrders((list) =>
       order.id === "basket"
-        ? [{ ...order, id: `demo-${Date.now()}`, status }, ...list]
+        ? [{ ...order, id: `demo-${createdAt}`, status, createdAt }, ...list]
         : list.map((x) => (x.id === order.id ? { ...x, status } : x)),
     );
     if (order.id === "basket") clear();
@@ -88,6 +91,7 @@ export function OrdersPage() {
           >
             {visible.map((order) => {
               const subtotal = order.items.reduce((s, x) => s + x.price * x.quantity, 0);
+              const delivery = getDeliveryCost(subtotal);
               return (
                 <article className="order-card" key={order.id}>
                   {order.id === "basket" && <h2>Your basket</h2>}
@@ -95,23 +99,28 @@ export function OrdersPage() {
                     <div className="order-row" key={`${item.name}-${index}`}>
                       <img src={item.image} alt="" />
                       <h3>{item.name}</h3>
-                      <span>${item.price}</span>
+                      <span>{formatMoney(item.price)}</span>
                       <span>× {item.quantity}</span>
-                      <strong>${item.price * item.quantity}</strong>
+                      <strong>{formatMoney(item.price * item.quantity)}</strong>
                     </div>
                   ))}
                   <div className="order-summary">
                     <div>
                       <span>
-                        Product price <b>${subtotal}</b>
+                        Product price <b>{formatMoney(subtotal)}</b>
                       </span>
                       <span>
-                        Delivery cost <b>$5</b>
+                        Delivery cost <b>{delivery ? formatMoney(delivery) : "Free"}</b>
                       </span>
                       <span>
-                        Total <b>${subtotal + 5}</b>
+                        Total <b>{formatMoney(subtotal + delivery)}</b>
                       </span>
                     </div>
+                    {order.createdAt && tab !== "paused" && (
+                      <time dateTime={new Date(order.createdAt).toISOString()}>
+                        {new Date(order.createdAt).toLocaleString()}
+                      </time>
+                    )}
                     {tab === "paused" && (
                       <div className="order-actions">
                         <button

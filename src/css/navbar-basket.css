@@ -97,6 +97,35 @@
   border-top: 1px solid #e2ddd5;
 }
 
-.navbar-basket-actions strong {
-  margin-right: auto;
+.navbar-basket-summary {
+  border-top: 1px solid #e2ddd5;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+}
+
+.navbar-basket-summary p {
+  margin: 0;
+}
+
+.navbar-basket-summary progress {
+  width: 100%;
+  accent-color: #477346;
+}
+
+.navbar-basket-summary dl {
+  margin: 6px 0;
+}
+
+.navbar-basket-summary dl > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.navbar-basket-summary dd {
+  margin: 0;
+}
+
+.navbar-basket-summary strong {
+  display: block;
+  text-align: right;
 }

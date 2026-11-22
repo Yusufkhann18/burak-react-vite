@@ -232,3 +232,14 @@
   object-fit: cover;
   border-radius: 50%;
 }
+
+.navbar-account.MuiIconButton-root {
+  padding: 0;
+}
+
+.navbar-account-error {
+  max-width: 16rem;
+  padding: 8px 16px;
+  color: #a52222;
+  font-size: 0.875rem;
+}

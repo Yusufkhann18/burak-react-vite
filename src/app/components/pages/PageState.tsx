@@ -23,17 +23,19 @@ export const defaultProfile: Profile = {
 const key = "burak-page-basket-v1";
 function readBasket(): BasketItem[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(value)
-      ? value.filter((item): item is BasketItem =>
-          !!item &&
-          typeof item.id === "string" &&
-          item.id.length > 0 &&
-          Number.isInteger(item.quantity) &&
-          item.quantity > 0 &&
-          item.quantity <= 99,
-        )
-      : [];
+    const saved = localStorage.getItem(key);
+    const value: unknown = JSON.parse(saved ?? localStorage.getItem("cartData") ?? "[]");
+    if (!Array.isArray(value)) return [];
+
+    const items = new Map<string, BasketItem>();
+    for (const entry of value) {
+      const id = saved === null ? entry?.["_id"] : entry?.id;
+      const quantity = entry?.quantity;
+      if (typeof id === "string" && id.length && Number.isInteger(quantity) && quantity > 0) {
+        items.set(id, { id, quantity: Math.min(99, quantity) });
+      }
+    }
+    return [...items.values()];
   } catch {
     return [];
   }

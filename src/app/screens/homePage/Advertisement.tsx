@@ -3,6 +3,9 @@ export default function Advertisement() {
     <section className="home-advertisement" aria-label="Discover Burak restaurant">
       <video
         controls
+        autoPlay={window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === false}
+        muted
+        loop
         playsInline
         preload="none"
         poster="/img/home/advertisement.webp"
