@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { getProducts } from "../../api/catalog";
 import type { Product } from "../../api/catalog";
+import { createOrder } from "../../api/orders";
 
 export type BasketItem = { id: string; quantity: number };
 type CatalogStatus = "loading" | "ready" | "error";
@@ -58,10 +59,16 @@ const Context = createContext<{
   add: (id: string) => void;
   change: (id: string, amount: number) => void;
   remove: (id: string) => void;
+  removeUnavailable: () => void;
   clear: () => void;
+  isCheckingOut: boolean;
+  checkoutIssue: string;
+  placeOrder: () => Promise<boolean>;
 } | null>(null);
 export function PageStateProvider({ children }: { children: ReactNode }) {
   const [basket, setBasket] = useState(readBasket);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const checkoutPending = useRef(false);
   const [catalog, setCatalog] = useState<Catalog>({
     products: [],
     status: "loading",
@@ -100,10 +107,34 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
     const product = productsById.get(item.id);
     return product ? [{ ...item, product }] : [];
   });
+  let checkoutIssue = "";
+  if (catalogStatus === "ready" && basket.length > 0) {
+    if (basketItems.length !== basket.length) checkoutIssue = "Remove unavailable items to continue.";
+    else if (basketItems.some(({ product, quantity }) => quantity > product.stock)) {
+      checkoutIssue = "Adjust quantities to match available stock.";
+    } else if (basket.length > 100) checkoutIssue = "An order can contain up to 100 different products.";
+  }
+
+  async function placeOrder() {
+    if (checkoutPending.current || !basket.length || catalogStatus !== "ready" || checkoutIssue) {
+      return false;
+    }
+    checkoutPending.current = true;
+    setIsCheckingOut(true);
+    try {
+      await createOrder(basket.map(({ id, quantity }) => ({ productId: id, itemQuantity: quantity })));
+      setBasket([]);
+      return true;
+    } finally {
+      checkoutPending.current = false;
+      setIsCheckingOut(false);
+    }
+  }
+
   const stockLimit = (id: string) => Math.min(99, productsById.get(id)?.stock ?? 0);
   const add = (id: string) => {
     const limit = stockLimit(id);
-    if (limit < 1) return;
+    if (checkoutPending.current || limit < 1) return;
     setBasket((items) =>
       items.some((x) => x.id === id)
         ? items.map((x) => (x.id === id && x.quantity < limit ? { ...x, quantity: x.quantity + 1 } : x))
@@ -111,6 +142,7 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
     );
   };
   const change = (id: string, amount: number) => {
+    if (checkoutPending.current) return;
     const limit = stockLimit(id);
     setBasket((items) =>
       items
@@ -124,7 +156,14 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
         .filter((item) => item.quantity > 0),
     );
   };
-  const remove = (id: string) => setBasket((items) => items.filter((item) => item.id !== id));
+  const remove = (id: string) => {
+    if (!checkoutPending.current) setBasket((items) => items.filter((item) => item.id !== id));
+  };
+  const removeUnavailable = () => {
+    if (!checkoutPending.current && catalogStatus === "ready") {
+      setBasket((items) => items.filter((item) => productsById.has(item.id)));
+    }
+  };
   return (
     <Context.Provider value={{
       basket,
@@ -135,7 +174,13 @@ export function PageStateProvider({ children }: { children: ReactNode }) {
       add,
       change,
       remove,
-      clear: () => setBasket([]),
+      removeUnavailable,
+      clear: () => {
+        if (!checkoutPending.current) setBasket([]);
+      },
+      isCheckingOut,
+      checkoutIssue,
+      placeOrder,
     }}>
       {children}
     </Context.Provider>

@@ -8,6 +8,10 @@
   justify-content: space-between;
   gap: 54px;
 }
+.orders-title {
+  margin-bottom: 20px;
+  text-align: left;
+}
 .order-tabs {
   display: flex;
   border-bottom: 2px solid #dedee4;
@@ -26,12 +30,13 @@
   background: #343434;
   color: #d7b686;
 }
-.demo-notice {
-  font-size: 12px;
-  color: #777;
-  margin: 12px 0 0;
+.order-payment-notice {
+  font-size: 13px;
+  color: #666;
+  margin: 12px 0 16px;
 }
 .orders-page .page-status {
+  display: block;
   font-size: 12px;
   min-height: 18px;
   margin: 4px 0 14px;
@@ -47,13 +52,30 @@
   padding: 20px 35px 0;
   box-shadow: 0 5px 16px #00000014;
 }
-.order-card h2 {
-  margin-top: 0;
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 16px;
+}
+.order-card-header h2 {
+  margin: 0;
   font-size: 18px;
+}
+.order-card-header time {
+  font-size: 13px;
+  color: #666;
+}
+.order-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 .order-row {
   display: grid;
-  grid-template-columns: 50px minmax(0, 1fr) 50px 36px 55px;
+  grid-template-columns: 50px minmax(0, 1fr) max-content max-content max-content;
   align-items: center;
   gap: 12px;
   margin-bottom: 14px;
@@ -68,6 +90,7 @@
   font-size: 20px;
   font-weight: 500;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .order-row > span,
 .order-row > strong {
@@ -95,6 +118,7 @@
 }
 .order-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
 }
 .order-cancel {
@@ -112,41 +136,12 @@
 .order-sidebar {
   padding-top: 76px;
 }
-.payment-preview {
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px 20px 20px;
-  margin-top: 24px;
-  box-shadow: 0 4px 14px #00000015;
-}
-.payment-placeholder {
-  min-width: 0;
-  padding: 10px;
-  background: #f4f4f7;
-  border: 1px solid #dedee5;
-  border-radius: 4px;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-.payment-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.payment-brands {
+.order-pagination {
   display: flex;
-  justify-content: space-around;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 12px;
-  margin: 24px 0 18px;
-}
-.payment-brands img {
-  width: 38px;
-  height: 26px;
-  object-fit: contain;
-}
-.payment-preview small {
-  font-size: 11px;
-  color: #777;
 }
 @media (max-width: 1050px) {
   .orders-layout {
@@ -157,7 +152,10 @@
     padding-inline: 20px;
   }
   .order-row {
-    grid-template-columns: 40px minmax(0, 1fr) 36px 28px 40px;
+    grid-template-columns: 40px minmax(
+        0,
+        1fr
+      ) max-content max-content max-content;
     gap: 8px;
   }
   .order-row img {
@@ -178,12 +176,6 @@
   }
   .order-sidebar {
     padding-top: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  .payment-preview {
-    margin-top: 0;
   }
   .order-tabs button {
     padding: 10px;
@@ -191,9 +183,6 @@
   }
 }
 @media (max-width: 480px) {
-  .order-sidebar {
-    grid-template-columns: 1fr;
-  }
   .order-card {
     padding-inline: 14px;
   }

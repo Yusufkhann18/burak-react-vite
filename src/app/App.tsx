@@ -1,10 +1,10 @@
+import { lazy, Suspense } from "react";
 import { PageStateProvider } from "./components/pages/PageState";
 import { AuthProvider } from "./auth/AuthProvider";
 import { Route, Switch, useLocation } from "react-router-dom";
 import HomePage from "./screens/homePage";
 
 import { ProductsPage, ProductDetailPage } from "./screens/productsPage";
-import { OrdersPage } from "./screens/ordersPage";
 import { UserPage } from "./screens/userPage";
 import { HelpPage } from "./screens/helpPage";
 import { Footer } from "./components/footer";
@@ -14,6 +14,9 @@ import "../css/app.css";
 import "../css/navbar.css";
 import "../css/home.css";
 import "../css/pages.css";
+
+const OrdersPage = lazy(() => import("./screens/ordersPage"));
+
 function App() {
   const location = useLocation();
   return (
@@ -29,7 +32,9 @@ function App() {
             <ProductsPage />
           </Route>
           <Route exact path="/orders">
-            <OrdersPage />
+            <Suspense fallback={<main className="inner-page"><output>Loading orders…</output></main>}>
+              <OrdersPage />
+            </Suspense>
           </Route>
           <Route exact path="/member-page">
             <UserPage />

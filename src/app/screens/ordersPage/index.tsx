@@ -1,181 +1,423 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { usePageState } from "../../components/pages/PageState";
-import { ProfileCard } from "../../components/pages/ProfileCard";
-import { formatMoney, getDeliveryCost } from "../../basket/pricing";
-import "../../../css/orders.css";
-type Status = "paused" | "process" | "finished";
-type Order = {
-  id: string;
-  status: Status;
-  createdAt?: number;
-  items: { name: string; price: number; quantity: number; image: string }[];
-};
-const sampleItems = [
-  { name: "Steak", price: 10, quantity: 2, image: "/img/pages/steak.webp" },
-  { name: "Fried chicken", price: 10, quantity: 2, image: "/img/pages/salmon-pasta.webp" },
-  { name: "Winner", price: 10, quantity: 2, image: "/img/pages/rice.webp" },
-];
-const initialOrders: Order[] = ["paused", "process", "finished"].flatMap((status) =>
-  [1, 2].map((i) => ({ id: `demo-${status}-${i}`, status: status as Status, items: sampleItems })),
-);
-export function OrdersPage() {
-  const [tab, setTab] = useState<Status>("paused");
-  const [orders, setOrders] = useState(initialOrders);
-  const [message, setMessage] = useState("");
-  const { basketItems, clear } = usePageState();
-  const current: Order | undefined = basketItems.length
-    ? {
-        id: "basket",
-        status: "paused",
-        items: basketItems.map(({ product, quantity }) => ({
-          name: product.name,
-          price: product.price,
-          quantity,
-          image: product.image,
-        })),
-      }
-    : undefined;
-  const visible = [...(current ? [current] : []), ...orders].filter(
-    (order) => order.status === tab,
-  );
-  function advance(order: Order) {
-    const status = order.status === "paused" ? "process" : "finished";
-    const createdAt = Date.now();
-    setOrders((list) =>
-      order.id === "basket"
-        ? [{ ...order, id: `demo-${createdAt}`, status, createdAt }, ...list]
-        : list.map((x) => (x.id === order.id ? { ...x, status } : x)),
-    );
-    if (order.id === "basket") clear();
-    setMessage(
-      status === "process"
-        ? "Demo order moved to Process. No payment was charged."
-        : "Demo order marked as finished.",
-    );
-    setTab(status);
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material"
+import { useEffect, useRef, useState } from "react"
+import type { KeyboardEvent } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { getOrders, OrderApiError, updateOrder } from "../../api/orders"
+import type { Order } from "../../api/orders"
+import { useAuth } from "../../auth/AuthProvider"
+import { formatMoney } from "../../basket/pricing"
+import { ProfileCard } from "../../components/pages/ProfileCard"
+import "../../../css/orders.css"
+
+const tabs = [
+  { status: "PAUSE", label: "Paused Order" },
+  { status: "PROCESS", label: "Process Order" },
+  { status: "FINISH", label: "Finished Orders" },
+] as const
+type OrderTab = (typeof tabs)[number]["status"]
+
+const actions = {
+  DELETE: {
+    question: "Cancel this order?",
+    confirmLabel: "Confirm cancellation",
+    success: "Order cancelled.",
+  },
+  PROCESS: {
+    question: "Start processing this order?",
+    confirmLabel: "Confirm processing",
+    success: "Order moved to processing.",
+  },
+  FINISH: {
+    question: "Have you received this order?",
+    confirmLabel: "Confirm receipt",
+    success: "Order marked as received.",
+  },
+} as const
+type OrderAction = keyof typeof actions
+type OrderFailure = { message: string; needsLogin: boolean }
+type OrderListing =
+  | { key: string; orders: Order[]; error?: never }
+  | { key: string; orders?: never; error: OrderFailure }
+
+const ordersPerPage = 10
+
+function orderFailure(error: unknown, fallback: string): OrderFailure {
+  if (error instanceof OrderApiError && (error.status === 401 || error.status === 403)) {
+    return { message: "Your session has expired.", needsLogin: true }
   }
+  return {
+    message: error instanceof OrderApiError ? error.message : fallback,
+    needsLogin: false,
+  }
+}
+
+export default function OrdersPage() {
+  const { member, openLogin, status } = useAuth()
+  const { key: routeKey } = useLocation()
+
+  if (!member) {
+    return (
+      <main className="inner-page orders-page">
+        <div className="page-container page-empty">
+          <h1 className="page-title">Your orders</h1>
+          {status === "loading" ? (
+            <output>Checking your session…</output>
+          ) : (
+            <>
+              <p>Log in to view your orders.</p>
+              <button type="button" className="page-button" onClick={openLogin}>
+                Log in
+              </button>
+            </>
+          )}
+        </div>
+      </main>
+    )
+  }
+
+  return <AuthenticatedOrders key={`${member.id}:${routeKey ?? "initial"}`} />
+}
+
+function AuthenticatedOrders() {
+  const { isLoggingOut, openLogin, setMember } = useAuth()
+  const [tab, setTab] = useState<OrderTab>("PAUSE")
+  const [page, setPage] = useState(1)
+  const [revision, setRevision] = useState(0)
+  const [listing, setListing] = useState<OrderListing | null>(null)
+  const [pending, setPending] = useState<{
+    id: string
+    action: OrderAction
+  } | null>(null)
+  const [updating, setUpdating] = useState(false)
+  const [actionError, setActionError] = useState<OrderFailure | null>(null)
+  const [notice, setNotice] = useState("")
+  const updateRequest = useRef<AbortController | null>(null)
+  const requestKey = `${tab}:${page}:${revision}`
+  const result = listing?.key === requestKey ? listing : null
+
+  useEffect(() => {
+    const request = new AbortController()
+    void getOrders(
+      { orderStatus: tab, page, limit: ordersPerPage },
+      request.signal,
+    ).then(
+      orders => {
+        if (!request.signal.aborted) setListing({ key: requestKey, orders })
+      },
+      (error: unknown) => {
+        if (!request.signal.aborted) {
+          setListing({
+            key: requestKey,
+            error: orderFailure(error, "Could not load your orders."),
+          })
+        }
+      },
+    )
+    return () => request.abort()
+  }, [tab, page, requestKey])
+
+  useEffect(() => () => updateRequest.current?.abort(), [])
+
+  function signInAgain() {
+    setMember(null)
+    openLogin()
+  }
+
+  function selectTab(status: OrderTab) {
+    if (status === tab) return
+    setTab(status)
+    setPage(1)
+    setNotice("")
+  }
+
+  function onTabKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    const lastIndex = tabs.length - 1
+    let nextIndex: number
+    switch (event.key) {
+      case "ArrowLeft":
+        nextIndex = index === 0 ? lastIndex : index - 1
+        break
+      case "ArrowRight":
+        nextIndex = index === lastIndex ? 0 : index + 1
+        break
+      case "Home":
+        nextIndex = 0
+        break
+      case "End":
+        nextIndex = lastIndex
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    const { status } = tabs[nextIndex]
+    selectTab(status)
+    document.getElementById(`order-tab-${status}`)?.focus()
+  }
+
+  async function confirmAction() {
+    if (!pending || updateRequest.current || isLoggingOut) return
+    const request = new AbortController()
+    updateRequest.current = request
+    const { action, id } = pending
+    setUpdating(true)
+    setActionError(null)
+    try {
+      await updateOrder(id, action, request.signal)
+      if (request.signal.aborted) return
+      if (action !== "DELETE") setTab(action)
+      setPage(1)
+      setRevision(value => value + 1)
+      setPending(null)
+      setNotice(actions[action].success)
+    } catch (error) {
+      if (!request.signal.aborted) {
+        setActionError(
+          orderFailure(error, "Could not update the order. Try again."),
+        )
+      }
+    } finally {
+      if (!request.signal.aborted) {
+        updateRequest.current = null
+        setUpdating(false)
+      }
+    }
+  }
+
+  const orders = result?.orders ?? []
+  const hasNextPage = orders.length === ordersPerPage
+
   return (
     <main className="inner-page orders-page">
       <div className="page-container orders-layout">
         <section>
+          <h1 className="page-title orders-title">Your orders</h1>
           <div className="order-tabs" role="tablist" aria-label="Order status">
-            {(
-              [
-                ["paused", "Paused Order"],
-                ["process", "Process Order"],
-                ["finished", "Finished Orders"],
-              ] as const
-            ).map(([value, label]) => (
+            {tabs.map(({ status, label }, index) => (
               <button
+                type="button"
                 role="tab"
-                aria-selected={tab === value}
+                aria-selected={tab === status}
                 aria-controls="order-list"
-                id={`order-tab-${value}`}
-                key={value}
-                onClick={() => setTab(value)}
+                id={`order-tab-${status}`}
+                key={status}
+                tabIndex={tab === status ? 0 : -1}
+                onClick={() => selectTab(status)}
+                onKeyDown={event => onTabKeyDown(event, index)}
               >
                 {label}
               </button>
             ))}
           </div>
-          <p className="demo-notice">Design preview · sample orders · no real payments</p>
-          <div className="page-status">
-            <output>{message}</output>
-          </div>
+          <p className="order-payment-notice">
+            Online payments are unavailable.
+          </p>
+          {notice && <output className="page-status">{notice}</output>}
           <div
             id="order-list"
             role="tabpanel"
             aria-labelledby={`order-tab-${tab}`}
+            aria-busy={!result}
             className="order-list"
           >
-            {visible.map((order) => {
-              const subtotal = order.items.reduce((s, x) => s + x.price * x.quantity, 0);
-              const delivery = getDeliveryCost(subtotal);
-              return (
-                <article className="order-card" key={order.id}>
-                  {order.id === "basket" && <h2>Your basket</h2>}
-                  {order.items.map((item, index) => (
-                    <div className="order-row" key={`${item.name}-${index}`}>
-                      <img src={item.image} alt="" />
-                      <h3>{item.name}</h3>
-                      <span>{formatMoney(item.price)}</span>
-                      <span>× {item.quantity}</span>
-                      <strong>{formatMoney(item.price * item.quantity)}</strong>
-                    </div>
-                  ))}
-                  <div className="order-summary">
-                    <div>
-                      <span>
-                        Product price <b>{formatMoney(subtotal)}</b>
-                      </span>
-                      <span>
-                        Delivery cost <b>{delivery ? formatMoney(delivery) : "Free"}</b>
-                      </span>
-                      <span>
-                        Total <b>{formatMoney(subtotal + delivery)}</b>
-                      </span>
-                    </div>
-                    {order.createdAt && tab !== "paused" && (
-                      <time dateTime={new Date(order.createdAt).toISOString()}>
-                        {new Date(order.createdAt).toLocaleString()}
-                      </time>
-                    )}
-                    {tab === "paused" && (
-                      <div className="order-actions">
-                        <button
-                          className="order-cancel"
-                          onClick={() => {
-                            if (order.id === "basket") clear();
-                            else setOrders((list) => list.filter((x) => x.id !== order.id));
-                            setMessage("Demo order cancelled.");
-                          }}
-                        >
-                          CANCEL
-                        </button>
-                        <button className="page-button" onClick={() => advance(order)}>
-                          PAYMENT
-                        </button>
-                      </div>
-                    )}
-                    {tab === "process" && (
-                      <button className="page-button" onClick={() => advance(order)}>
-                        VERIFY TO FULFIL
-                      </button>
-                    )}
-                    {tab === "finished" && <span className="finished-label">Completed</span>}
-                  </div>
-                </article>
-              );
-            })}
-            {!visible.length && (
+            {!result && (
+              <output className="page-status">Loading orders…</output>
+            )}
+            {result?.error && (
+              <div className="page-empty">
+                <p role="alert">{result.error.message}</p>
+                {result.error.needsLogin ? (
+                  <button
+                    type="button"
+                    className="page-button"
+                    onClick={signInAgain}
+                  >
+                    Log in again
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="page-button"
+                    onClick={() => setRevision(value => value + 1)}
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
+            )}
+            {orders.map(order => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                disabled={isLoggingOut}
+                onAction={action => {
+                  setActionError(null)
+                  setPending({ id: order.id, action })
+                }}
+              />
+            ))}
+            {result?.orders && orders.length === 0 && (
               <div className="page-empty">
                 <p>No orders in this section.</p>
-                <Link className="page-button" to="/products">
-                  Explore menu
-                </Link>
+                {page === 1 && (
+                  <Link className="page-button" to="/products">
+                    Explore menu
+                  </Link>
+                )}
               </div>
+            )}
+            {(page > 1 || hasNextPage) && (
+              <nav className="order-pagination" aria-label="Order pages">
+                <button
+                  type="button"
+                  className="page-button"
+                  disabled={page === 1 || !result}
+                  onClick={() => setPage(value => value - 1)}
+                >
+                  Previous
+                </button>
+                <span>Page {page}</span>
+                <button
+                  type="button"
+                  className="page-button"
+                  disabled={!hasNextPage}
+                  onClick={() => setPage(value => value + 1)}
+                >
+                  Next
+                </button>
+              </nav>
             )}
           </div>
         </section>
         <aside className="order-sidebar">
           <ProfileCard />
-          <section className="payment-preview" aria-label="Payment method preview">
-            <div className="payment-placeholder">Card number: •••• •••• •••• 7495</div>
-            <div className="payment-pair">
-              <div className="payment-placeholder">MM / YY</div>
-              <div className="payment-placeholder">CVV: •••</div>
-            </div>
-            <div className="payment-placeholder">Justin Robertson</div>
-            <div className="payment-brands">
-              {["western", "master", "paypal", "visa"].map((name) => (
-                <img key={name} src={`/icons/${name}-card.svg`} alt={name} />
-              ))}
-            </div>
-            <small>Payment integration is not connected.</small>
-          </section>
         </aside>
       </div>
+      {pending && (
+        <Dialog
+          open
+          onClose={updating ? undefined : () => setPending(null)}
+          aria-labelledby="order-confirmation-title"
+        >
+          <DialogTitle id="order-confirmation-title">
+            {actions[pending.action].question}
+          </DialogTitle>
+          {actionError && (
+            <DialogContent>
+              <p role="alert">{actionError.message}</p>
+            </DialogContent>
+          )}
+          <DialogActions>
+            <Button disabled={updating} onClick={() => setPending(null)}>
+              Close
+            </Button>
+            {actionError?.needsLogin ? (
+              <Button variant="contained" onClick={signInAgain}>
+                Log in again
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                disabled={updating || isLoggingOut}
+                onClick={() => void confirmAction()}
+              >
+                {updating ? "Updating…" : actions[pending.action].confirmLabel}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+      )}
     </main>
-  );
+  )
+}
+
+function OrderCard({
+  order,
+  disabled,
+  onAction,
+}: {
+  order: Order
+  disabled: boolean
+  onAction: (action: OrderAction) => void
+}) {
+  const createdAt = new Date(order.createdAt)
+  return (
+    <article className="order-card">
+      <header className="order-card-header">
+        <h2>Order #{order.id.slice(-8)}</h2>
+        {Number.isFinite(createdAt.getTime()) && (
+          <time dateTime={createdAt.toISOString()}>
+            {createdAt.toLocaleString()}
+          </time>
+        )}
+      </header>
+      <ul className="order-items">
+        {order.items.map(item => (
+          <li className="order-row" key={item.id}>
+            <img src={item.image} alt="" />
+            <h3>{item.name}</h3>
+            <span>{formatMoney(item.price)}</span>
+            <span>× {item.quantity}</span>
+            <strong>{formatMoney(item.price * item.quantity)}</strong>
+          </li>
+        ))}
+      </ul>
+      <div className="order-summary">
+        <div>
+          <span>
+            Product price <b>{formatMoney(order.total - order.delivery)}</b>
+          </span>
+          <span>
+            Delivery cost{" "}
+            <b>{order.delivery ? formatMoney(order.delivery) : "Free"}</b>
+          </span>
+          <span>
+            Total <b>{formatMoney(order.total)}</b>
+          </span>
+        </div>
+        {order.status === "PAUSE" && (
+          <div className="order-actions">
+            <button
+              type="button"
+              className="order-cancel"
+              disabled={disabled}
+              onClick={() => onAction("DELETE")}
+            >
+              Cancel order
+            </button>
+            <button
+              type="button"
+              className="page-button"
+              disabled={disabled}
+              onClick={() => onAction("PROCESS")}
+            >
+              Start processing
+            </button>
+          </div>
+        )}
+        {order.status === "PROCESS" && (
+          <button
+            type="button"
+            className="page-button"
+            disabled={disabled}
+            onClick={() => onAction("FINISH")}
+          >
+            Mark as received
+          </button>
+        )}
+        {order.status === "FINISH" && (
+          <span className="finished-label">Completed</span>
+        )}
+      </div>
+    </article>
+  )
 }

@@ -24,6 +24,10 @@ API. Serve the frontend and API through the same origin to use the session cooki
 issued by Burak. A separate API origin must allow credentialed requests from the
 exact frontend origin and use compatible cookie settings.
 
+Checkout creates an order through Burak. The backend supplies prices and
+delivery totals, and each signed-in member can view and update their own order
+statuses. Processing records an order status change without charging a card.
+
 Entry: `src/index.tsx`. Page: `src/app/App.tsx`. Styles: `src/css/`.
 
 Redux: `src/features/counter/counterSlice.ts` provides `increment`, `decrement`,

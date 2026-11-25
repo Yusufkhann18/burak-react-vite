@@ -24,6 +24,21 @@ const account = {
   memberDesc: "",
   memberImage: "uploads/members/ali.png",
 };
+const orderId = "64ab12345678901234567805";
+const order = {
+  _id: orderId,
+  orderStatus: "PAUSE",
+  orderTotal: 22,
+  orderDelivery: 5,
+  createdAt: "2026-11-25T01:00:00.000Z",
+  updatedAt: "2026-11-25T01:00:00.000Z",
+};
+const orderItems = [{
+  _id: "64ab12345678901234567806", productId: riceId, itemQuantity: 1, itemPrice: 17,
+}];
+let storedOrders: (typeof order)[];
+let createGate: Promise<void> | null;
+let failOrderCreation: boolean;
 let catalog: typeof rice[];
 let failNextMenuRequest: boolean;
 let signedIn: typeof account | null;
@@ -67,6 +82,29 @@ const fetchBurak = vi.fn<(input: string, init?: RequestInit) => Promise<Response
   if (pathname === "/api/member/restaurant") {
     return Response.json({ ...account, memberNick: "Restaurant contact" });
   }
+  if (pathname.startsWith("/api/order/") && !signedIn) return new Response(null, { status: 401 });
+  if (pathname === "/api/order/create" && init?.method === "POST") {
+    await createGate;
+    if (failOrderCreation) return new Response(null, { status: 503 });
+    storedOrders = [order];
+    return Response.json(order, { status: 201 });
+  }
+  if (pathname === "/api/order/all") {
+    const limit = Number(searchParams.get("limit"));
+    const page = Number(searchParams.get("page"));
+    return Response.json(storedOrders
+      .filter((value) => value.orderStatus === searchParams.get("orderStatus"))
+      .slice((page - 1) * limit, page * limit)
+      .map((value) => ({ ...value, orderItems, productData: [rice] })));
+  }
+  if (pathname === "/api/order/update" && init?.method === "POST") {
+    const { orderId: id, orderStatus } = JSON.parse(String(init.body));
+    const current = storedOrders.find((value) => value["_id"] === id);
+    if (!current) return new Response(null, { status: 404 });
+    const saved = { ...current, orderStatus };
+    storedOrders = storedOrders.map((value) => value["_id"] === id ? saved : value);
+    return Response.json(saved);
+  }
   return new Response(null, { status: 404 });
 });
 
@@ -74,6 +112,9 @@ beforeEach(() => {
   localStorage.clear();
   catalog = [rice, { ...rice, _id: "64ab12345678901234567802" }];
   failNextMenuRequest = false;
+  storedOrders = [];
+  failOrderCreation = false;
+  createGate = null;
   signedIn = null;
   fetchBurak.mockClear();
   vi.stubGlobal("fetch", fetchBurak);
@@ -134,7 +175,7 @@ test("the menu fetches the next page and retains its sort", async () => {
     return query.get("page") === "2" && query.get("order") === "productPrice";
   })).toBe(true);
 });
-test("both headers open the shared basket with live quantities and an order link", async () => {
+test("both headers share basket quantities and prompt guests to log in before checkout", async () => {
   open("/");
   const homeBasketButton = screen.getByRole("button", { name: "Shopping basket" });
   homeBasketButton.focus();
@@ -165,10 +206,10 @@ test("both headers open the shared basket with live quantities and an order link
   fireEvent.click(addRice);
   fireEvent.click(screen.getByRole("button", { name: "Shopping basket (1)" }));
   basket = await screen.findByRole("dialog", { name: "Your basket" });
-  fireEvent.click(within(basket).getByRole("link", { name: "Order" }));
-  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-  expect(screen.getByRole("tab", { name: "Paused Order" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Your basket" })).toBeVisible();
+  fireEvent.click(within(basket).getByRole("button", { name: "Log in to place order" }));
+  expect(await screen.findByRole("dialog", { name: "Log in" })).toBeVisible();
+  expect(localStorage.getItem("burak-page-basket-v1")).toBe(JSON.stringify([{ id: riceId, quantity: 1 }]));
+  expect(fetchBurak.mock.calls.some(([url]) => url === "/api/order/create")).toBe(false);
 });
 test("imports the original CRA cart and applies free shipping when eligible", async () => {
   localStorage.setItem("cartData", JSON.stringify([{ _id: riceId, quantity: 1 }]));
@@ -199,19 +240,76 @@ test("product details from Burak add the backend product ID to the shared basket
     { id: riceId, quantity: 1 },
   ]);
 });
-test("order preview moves between states without charging payment", () => {
+test("checkout places one order, clears the basket on success and loads server totals", async () => {
+  signedIn = account;
+  localStorage.setItem("cartData", JSON.stringify([{ _id: riceId, quantity: 1 }]));
+  let finishCheckout!: () => void;
+  createGate = new Promise<void>((resolve) => { finishCheckout = resolve; });
+  open("/products?basket=1");
+  const place = await screen.findByRole("button", { name: "Place order" });
+  await waitFor(() => expect(place).toBeEnabled());
+  fireEvent.click(place);
+  expect(screen.getByRole("button", { name: "Placing order…" })).toBeDisabled();
+  fireEvent.click(place);
+  const calls = fetchBurak.mock.calls.filter(([url]) => url === "/api/order/create");
+  expect(calls).toHaveLength(1);
+  expect(calls[0][1]).toMatchObject({
+    method: "POST", credentials: "include",
+    body: JSON.stringify([{ productId: riceId, itemQuantity: 1 }]),
+  });
+  expect(localStorage.getItem("burak-page-basket-v1")).toBe(JSON.stringify([{ id: riceId, quantity: 1 }]));
+  finishCheckout();
+  expect(await screen.findByRole("tab", { name: "Paused Order" })).toBeVisible();
+  expect(await screen.findByRole("heading", { name: "Kebuli Rice" })).toBeVisible();
+  expect(screen.getByText("$22.00")).toBeVisible();
+  expect(localStorage.getItem("burak-page-basket-v1")).toBe("[]");
+});
+test("an unconfirmed checkout preserves the basket and does not retry the POST", async () => {
+  signedIn = account;
+  failOrderCreation = true;
+  localStorage.setItem("cartData", JSON.stringify([{ _id: riceId, quantity: 1 }]));
+  open("/products?basket=1");
+  const place = await screen.findByRole("button", { name: "Place order" });
+  await waitFor(() => expect(place).toBeEnabled());
+  fireEvent.click(place);
+  expect(await screen.findByRole("alert")).toHaveTextContent(/Could not confirm the order/);
+  expect(localStorage.getItem("burak-page-basket-v1")).toBe(JSON.stringify([{ id: riceId, quantity: 1 }]));
+  expect(fetchBurak.mock.calls.filter(([url]) => url === "/api/order/create")).toHaveLength(1);
+});
+test("an authenticated member processes and completes an order without a payment charge", async () => {
+  signedIn = account;
+  storedOrders = [order];
   open("/orders");
-  fireEvent.click(screen.getAllByRole("button", { name: "PAYMENT" })[0]);
-  expect(screen.getByRole("tab", { name: "Process Order" })).toHaveAttribute(
+  fireEvent.click(await screen.findByRole("button", { name: "Start processing" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Confirm processing" }));
+  expect(await screen.findByRole("tab", { name: "Process Order", selected: true })).toHaveAttribute(
     "aria-selected",
     "true",
   );
-  expect(screen.getByText(/No payment was charged/)).toBeInTheDocument();
-  fireEvent.click(screen.getAllByRole("button", { name: "VERIFY TO FULFIL" })[0]);
-  expect(screen.getByRole("tab", { name: "Finished Orders" })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Mark as received" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Confirm receipt" }));
+  expect(await screen.findByRole("tab", { name: "Finished Orders", selected: true })).toBeVisible();
+  expect(await screen.findByRole("heading", { name: "Kebuli Rice" })).toBeVisible();
+  expect(fetchBurak.mock.calls.filter(([url]) => url === "/api/order/update").map(([, init]) => init?.body))
+    .toEqual([
+      JSON.stringify({ orderId, orderStatus: "PROCESS" }),
+      JSON.stringify({ orderId, orderStatus: "FINISH" }),
+    ]);
+});
+test("cancelling a paused order persists the cancellation and refreshes the list", async () => {
+  signedIn = account;
+  storedOrders = [order];
+  open("/orders");
+  fireEvent.click(await screen.findByRole("button", { name: "Cancel order" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Confirm cancellation" }));
+  await waitFor(() => expect(screen.queryByRole("heading", { name: "Kebuli Rice" })).not.toBeInTheDocument());
+  expect(storedOrders[0]?.orderStatus).toBe("DELETE");
+});
+test("guests cannot load or change another member's orders", async () => {
+  open("/orders");
+  expect(await screen.findByText("Log in to view your orders.")).toBeVisible();
+  expect(within(screen.getByRole("main")).getByRole("button", { name: "Log in" })).toBeVisible();
+  expect(fetchBurak.mock.calls.some(([url]) => url.startsWith("/api/order/"))).toBe(false);
 });
 test("guest profile edits are persisted in the browser", async () => {
   open("/member-page");

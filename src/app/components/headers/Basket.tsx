@@ -2,11 +2,13 @@ import { Badge, Button, IconButton, Popover } from "@mui/material";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePageState } from "../pages/PageState";
+import { CheckoutButton } from "../../basket/CheckoutButton";
 import { formatMoney, freeShippingThreshold, getDeliveryCost } from "../../basket/pricing";
 import "../../../css/navbar-basket.css";
 
 export function Basket() {
-  const { basket, basketItems, catalogStatus, retryCatalog, change, remove, clear } = usePageState();
+  const { basket, basketItems, catalogStatus, retryCatalog, change, remove,
+    removeUnavailable, clear, isCheckingOut } = usePageState();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const dialogId = useId();
   const titleId = `${dialogId}-title`;
@@ -52,7 +54,7 @@ export function Basket() {
       >
         <div className="navbar-basket-heading">
           <h2 id={titleId}>Your basket</h2>
-          {basket.length > 0 && <Button onClick={clear}>Clear basket</Button>}
+          {basket.length > 0 && <Button disabled={isCheckingOut} onClick={clear}>Clear basket</Button>}
           <IconButton aria-label="Close basket" size="small" onClick={close}>
             <img src="/icons/close.svg" alt="" width="16" height="16" />
           </IconButton>
@@ -68,6 +70,7 @@ export function Basket() {
                   <div className="navbar-basket-quantity">
                     <Button
                       aria-label={`Decrease ${product.name}`}
+                      disabled={isCheckingOut}
                       onClick={() => change(id, -1)}
                     >
                       −
@@ -75,7 +78,7 @@ export function Basket() {
                     <output aria-label={`${product.name} quantity`}>{quantity}</output>
                     <Button
                       aria-label={`Increase ${product.name}`}
-                      disabled={quantity >= Math.min(99, product.stock)}
+                      disabled={isCheckingOut || quantity >= Math.min(99, product.stock)}
                       onClick={() => change(id, 1)}
                     >
                       +
@@ -85,6 +88,7 @@ export function Basket() {
                 <IconButton
                   aria-label={`Remove ${product.name}`}
                   size="small"
+                  disabled={isCheckingOut}
                   onClick={() => remove(id)}
                 >
                   <img src="/icons/close.svg" alt="" width="12" height="12" />
@@ -105,7 +109,10 @@ export function Basket() {
           </p>
         )}
         {catalogStatus === "ready" && basket.length > basketItems.length && (
-          <p className="navbar-basket-empty">Some saved items are no longer available.</p>
+          <div className="navbar-basket-empty">
+            <span>Some saved items are no longer available.</span>
+            <Button onClick={removeUnavailable}>Remove unavailable items</Button>
+          </div>
         )}
         {catalogStatus === "ready" && basket.length === 0 && (
           <p className="navbar-basket-empty">Your basket is empty.</p>
@@ -133,12 +140,12 @@ export function Basket() {
           <Button component={Link} to="/products?basket=1" onClick={close}>
             View basket
           </Button>
-          {basketItems.length > 0 && (
-            <Button component={Link} to="/orders" variant="contained" onClick={close}>
-              Order
-            </Button>
-          )}
         </div>
+        {basket.length > 0 && (
+          <div className="navbar-basket-actions">
+            <CheckoutButton onLeave={close} />
+          </div>
+        )}
       </Popover>
     </>
   );

@@ -11,6 +11,7 @@ import type { Product } from "../../api/catalog";
 import { getRestaurant } from "../../api/member";
 import type { Member } from "../../api/member";
 import { formatMoney, getDeliveryCost } from "../../basket/pricing";
+import { CheckoutButton } from "../../basket/CheckoutButton";
 import { usePageState } from "../../components/pages/PageState";
 import "../../../css/products.css";
 
@@ -113,8 +114,8 @@ export function ProductsPage() {
   const validPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 &&
     Number.isSafeInteger((requestedPage + 1) * menuPageSize);
   const page = validPage ? requestedPage : 1;
-  const { products, catalogStatus, retryCatalog, add, basket, basketItems, change, clear } =
-    usePageState();
+  const { products, catalogStatus, retryCatalog, add, basket, basketItems, change,
+    clear, removeUnavailable, isCheckingOut } = usePageState();
   const [notice, setNotice] = useState("");
   const isBasket = params.get("basket") === "1";
   const { result, retry } = useMenuResults({
@@ -199,7 +200,7 @@ export function ProductsPage() {
                     type="button"
                     className="menu-add"
                     aria-label={`Add ${product.name} to basket`}
-                    disabled={(quantities.get(product.id) ?? 0) >= stock}
+                    disabled={isCheckingOut || (quantities.get(product.id) ?? 0) >= stock}
                     onClick={() => {
                       add(product.id);
                       setNotice(`${product.name} added to basket`);
@@ -331,6 +332,7 @@ export function ProductsPage() {
                       <div className="quantity-controls">
                         <button
                           aria-label={`Decrease ${product.name}`}
+                          disabled={isCheckingOut}
                           onClick={() => change(id, -1)}
                         >
                           −
@@ -338,7 +340,7 @@ export function ProductsPage() {
                         <output>{quantity}</output>
                         <button
                           aria-label={`Increase ${product.name}`}
-                          disabled={quantity >= Math.min(99, product.stock)}
+                          disabled={isCheckingOut || quantity >= Math.min(99, product.stock)}
                           onClick={() => change(id, 1)}
                         >
                           +
@@ -362,9 +364,6 @@ export function ProductsPage() {
                   <dd><strong>{formatMoney(subtotal + delivery)}</strong></dd>
                 </div>
               </dl>
-              <Link className="page-button" to="/orders">
-                Review order
-              </Link>
             </>
           )}
           {catalogStatus === "loading" && <output>Checking basket items…</output>}
@@ -376,14 +375,24 @@ export function ProductsPage() {
               </button>
             </p>
           )}
-          {unavailable && <p>Some saved items are no longer available.</p>}
+          {unavailable && (
+            <p>
+              Some saved items are no longer available.{" "}
+              <button type="button" className="text-button" onClick={removeUnavailable}>
+                Remove unavailable items
+              </button>
+            </p>
+          )}
           {catalogStatus === "ready" && basket.length === 0 && (
             <p>Your basket is empty. Add a dish from the menu.</p>
           )}
           {basket.length > 0 && (
-            <button className="text-button" onClick={clear}>
-              Clear basket
-            </button>
+            <>
+              <CheckoutButton />
+              <button className="text-button" disabled={isCheckingOut} onClick={clear}>
+                Clear basket
+              </button>
+            </>
           )}
         </section>
       )}
@@ -432,7 +441,7 @@ function ProductPhotos({ product }: { product: Product }) {
 }
 
 function ProductDetails({ productId }: { productId: string }) {
-  const { products, catalogStatus, retryCatalog, basket, add } = usePageState();
+  const { products, catalogStatus, retryCatalog, basket, add, isCheckingOut } = usePageState();
   const [detail, setDetail] = useState<ProductDetailResult>({ status: "loading" });
   const restaurant = useRestaurant();
   const [added, setAdded] = useState(false);
@@ -529,7 +538,7 @@ function ProductDetails({ productId }: { productId: string }) {
             <button
               type="button"
               className="page-button"
-              disabled={!canAdd}
+              disabled={!canAdd || isCheckingOut}
               onClick={() => {
                 add(product.id);
                 setAdded(true);
