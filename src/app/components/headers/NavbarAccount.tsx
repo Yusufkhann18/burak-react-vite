@@ -2,6 +2,7 @@ import { Button, IconButton, Menu, MenuItem } from "@mui/material";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { MemberAvatar } from "../MemberAvatar";
 
 export function NavbarAccount() {
   const { member, status, error, openLogin, logout, isLoggingOut } = useAuth();
@@ -35,7 +36,7 @@ export function NavbarAccount() {
         aria-controls={isOpen ? menuId : undefined}
         onClick={(event) => setAnchor(event.currentTarget)}
       >
-        <img className="navbar-avatar" src={member.image} alt="" />
+        <MemberAvatar className="navbar-avatar" src={member.image} />
       </IconButton>
       <Menu
         anchorEl={anchor}

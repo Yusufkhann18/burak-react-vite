@@ -1,6 +1,7 @@
 import { Container } from "@mui/material"
 import { useEffect, useState } from "react"
 import { getTopUsers, type PublicUser } from "../../api/catalog"
+import { MemberAvatar } from "../../components/MemberAvatar"
 
 type UsersResult =
   | { status: "loading" | "error" }
@@ -52,7 +53,7 @@ export default function ActiveUsers() {
             <div className="users-grid">
               {result.users.map(user => (
                 <figure className="user-card" key={user.id}>
-                  <img src={user.image} alt="" loading="lazy" />
+                  <MemberAvatar src={user.image} loading="lazy" />
                   <figcaption>{user.name}</figcaption>
                 </figure>
               ))}

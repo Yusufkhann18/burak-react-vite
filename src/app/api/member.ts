@@ -13,6 +13,8 @@ export type Member = {
 type Credentials = { name: string; password: string }
 type ProfileFields = Pick<Member, "name" | "phone" | "address" | "description">
 
+export const defaultMemberAvatar = "/icons/default-user.svg"
+
 export class MemberApiError extends Error {
   readonly status: number
 
@@ -37,15 +39,15 @@ function readMember(value: unknown): Member {
     address:
       typeof member.memberAddress === "string" ? member.memberAddress : "",
     description: typeof member.memberDesc === "string" ? member.memberDesc : "",
-    image: memberAvatar(memberImage),
+    image: memberAvatarUrl(memberImage),
   }
 }
 
-function memberAvatar(value: unknown): string {
-  if (typeof value !== "string") return "/icons/default-user.svg"
-  const path = value.trim().replace(/^\.\//, "")
-  const isFilename = /^[\w.-]+\.(?:jpe?g|png|webp|gif|avif)$/i.test(path)
-  return uploadImage(isFilename ? `uploads/members/${path}` : path) ?? "/icons/default-user.svg"
+export function memberAvatarUrl(value: unknown): string {
+  if (typeof value !== "string") return defaultMemberAvatar
+  const path = value.trim().replace(/\\/g, "/").replace(/^\.\//, "")
+  const isFilename = /^[^/:?#]+\.(?:jpe?g|png|webp|gif|avif)$/i.test(path)
+  return uploadImage(isFilename ? `uploads/members/${path}` : path) ?? defaultMemberAvatar
 }
 
 async function checkStatus(response: Response, fallback: string) {
@@ -62,7 +64,7 @@ async function checkStatus(response: Response, fallback: string) {
 
 function postMember(
   path: string,
-  input: Record<string, string> | FormData,
+  input: Record<string, string | undefined> | FormData,
   signal?: AbortSignal,
 ) {
   const multipart = input instanceof FormData
@@ -122,7 +124,7 @@ export async function logoutMember() {
 }
 
 export async function updateMember(
-  values: ProfileFields,
+  values: Partial<ProfileFields>,
   image?: File,
   signal?: AbortSignal,
 ) {
@@ -133,10 +135,12 @@ export async function updateMember(
     memberDesc: values.description,
   }
 
-  let input: Record<string, string> | FormData = fields
+  let input: typeof fields | FormData = fields
   if (image) {
     const form = new FormData()
-    for (const [key, value] of Object.entries(fields)) form.set(key, value)
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) form.set(key, value)
+    }
     form.set("memberImage", image)
     input = form
   }

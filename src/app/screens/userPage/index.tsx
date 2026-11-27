@@ -4,6 +4,7 @@ import { Redirect } from "react-router-dom";
 import { MemberApiError, updateMember } from "../../api/member";
 import type { Member } from "../../api/member";
 import { useAuth } from "../../auth/AuthProvider";
+import { MemberAvatar } from "../../components/MemberAvatar";
 import { ProfileCard } from "../../components/pages/ProfileCard";
 import "../../../css/user.css";
 
@@ -39,6 +40,8 @@ function ProfileSettings({ member }: { member: Member }) {
   const imageReader = useRef<FileReader | null>(null);
   const saveRequest = useRef<AbortController | null>(null);
   const busy = loading || saving;
+  const avatarOnly = !!image && profile.name === member.name && profile.phone === member.phone &&
+    profile.address === member.address && profile.description === member.description;
   useEffect(() => () => {
     imageReader.current?.abort();
     saveRequest.current?.abort();
@@ -84,7 +87,7 @@ function ProfileSettings({ member }: { member: Member }) {
       address: profile.address.trim(),
       description: profile.description.trim(),
     };
-    if (Object.values(fields).some((value) => !value)) {
+    if (!avatarOnly && Object.values(fields).some((value) => !value)) {
       setMessage("Complete all required fields.");
       return;
     }
@@ -94,7 +97,7 @@ function ProfileSettings({ member }: { member: Member }) {
     setSaving(true);
     setMessage("");
     try {
-      const updated = await updateMember(fields, image?.file, request.signal);
+      const updated = await updateMember(avatarOnly ? {} : fields, image?.file, request.signal);
       if (request.signal.aborted) return;
       setMember(updated);
       setProfile(updated);
@@ -122,7 +125,7 @@ function ProfileSettings({ member }: { member: Member }) {
         <form className="profile-form" aria-busy={busy} onSubmit={save}>
           <h1 className="sr-only">My profile</h1>
           <div className="profile-upload">
-            <img src={image?.preview ?? member.image} alt="Profile preview" />
+            <MemberAvatar src={image?.preview ?? member.image} alt="Profile preview" />
             <div>
               <label className="upload-button" htmlFor="profile-image">
                 Upload image
@@ -143,7 +146,7 @@ function ProfileSettings({ member }: { member: Member }) {
             <label>
               Nickname
               <input
-                required
+                required={!avatarOnly}
                 maxLength={60}
                 autoComplete="username"
                 disabled={busy}
@@ -154,7 +157,7 @@ function ProfileSettings({ member }: { member: Member }) {
             <label>
               Phone
               <input
-                required
+                required={!avatarOnly}
                 type="tel"
                 maxLength={30}
                 autoComplete="tel"
@@ -166,7 +169,7 @@ function ProfileSettings({ member }: { member: Member }) {
             <label>
               Address
               <input
-                required
+                required={!avatarOnly}
                 maxLength={200}
                 autoComplete="street-address"
                 disabled={busy}
@@ -177,7 +180,7 @@ function ProfileSettings({ member }: { member: Member }) {
             <label>
               Description
               <textarea
-                required
+                required={!avatarOnly}
                 rows={4}
                 maxLength={500}
                 disabled={busy}

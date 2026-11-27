@@ -1,4 +1,5 @@
 import { useAuth } from "../../auth/AuthProvider";
+import { MemberAvatar } from "../MemberAvatar";
 
 export function ProfileCard({ description = false }: { description?: boolean }) {
   const { member } = useAuth();
@@ -10,7 +11,7 @@ export function ProfileCard({ description = false }: { description?: boolean }) 
   return (
     <aside className="profile-card">
       <div className="profile-avatar">
-        <img src={member.image} alt="" />
+        <MemberAvatar src={member.image} />
         <img className="profile-badge" src={badge} alt="" />
       </div>
       <h2>{member.name}</h2>

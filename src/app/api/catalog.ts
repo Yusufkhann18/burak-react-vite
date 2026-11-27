@@ -1,4 +1,5 @@
 import { asRecord, isObjectId, requestApi, uploadImage } from "./client"
+import { memberAvatarUrl } from "./member"
 
 export type Product = {
   id: string
@@ -159,7 +160,7 @@ export async function getTopUsers(signal?: AbortSignal): Promise<PublicUser[]> {
     return {
       id,
       name: memberNick,
-      image: uploadImage(memberImage) || "/icons/default-user.svg",
+      image: memberAvatarUrl(memberImage),
     }
   })
 }

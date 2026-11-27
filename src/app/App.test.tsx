@@ -62,7 +62,11 @@ const fetchBurak = vi.fn<(input: string, init?: RequestInit) => Promise<Response
   }
   if (pathname === `/api/product/${riceId}`) return Response.json(rice);
   if (pathname === "/api/member/top-users") {
-    return Response.json([{ _id: "64ab12345678901234567803", memberNick: "Ali" }]);
+    return Response.json([{
+      _id: "64ab12345678901234567803",
+      memberNick: "Ali",
+      memberImage: "Ali avatar.png",
+    }]);
   }
   if (pathname === "/api/member/detail") {
     return signedIn ? Response.json(signedIn) : new Response(null, { status: 401 });
@@ -82,10 +86,10 @@ const fetchBurak = vi.fn<(input: string, init?: RequestInit) => Promise<Response
     const { memberNick, memberPhone, memberAddress, memberDesc, memberImage } = submitted;
     signedIn = {
       ...signedIn,
-      memberNick,
-      memberPhone,
-      memberAddress,
-      memberDesc,
+      memberNick: memberNick ?? signedIn.memberNick,
+      memberPhone: memberPhone ?? signedIn.memberPhone,
+      memberAddress: memberAddress ?? signedIn.memberAddress,
+      memberDesc: memberDesc ?? signedIn.memberDesc,
       memberImage: memberImage instanceof File
         ? "uploads/members/updated.png"
         : signedIn.memberImage,
@@ -145,7 +149,12 @@ test("home page renders dishes and active members from Burak", async () => {
   expect(screen.getByText("World's Most Delicious Cousine")).toBeInTheDocument();
   expect(screen.getByRole("contentinfo")).toBeInTheDocument();
   expect(await screen.findAllByRole("heading", { name: "Kebuli Rice" })).toHaveLength(4);
-  expect(await screen.findByText("Ali")).toBeVisible();
+  const user = (await screen.findByText("Ali")).closest("figure")!;
+  expect(user).toBeVisible();
+  const avatar = user.querySelector("img")!;
+  expect(avatar).toHaveAttribute("src", "/uploads/members/Ali%20avatar.png");
+  fireEvent.error(avatar);
+  expect(avatar).toHaveAttribute("src", "/icons/default-user.svg");
 });
 test("menu search, empty categories and basket quantity work", async () => {
   open("/products");
@@ -376,6 +385,27 @@ test("logs in from the navbar, saves to the member API, and logs out", async () 
   fireEvent.click(accountButton);
   fireEvent.click(await screen.findByRole("menuitem", { name: "Log out" }));
   expect(await screen.findByRole("button", { name: "Login" })).toBeVisible();
+});
+test("a member can replace their avatar before completing their profile", async () => {
+  signedIn = { ...account, memberAddress: "", memberDesc: "", memberImage: ".\\uploads\\members\\ali.png" };
+  open("/member-page");
+  const accountButton = await screen.findByRole("button", { name: "Account for Ali" });
+  const oldAvatar = accountButton.querySelector("img")!;
+  expect(oldAvatar).toHaveAttribute("src", "/uploads/members/ali.png");
+  fireEvent.error(oldAvatar);
+  expect(oldAvatar).toHaveAttribute("src", "/icons/default-user.svg");
+
+  const file = new File(["test image"], "avatar.png", { type: "image/png" });
+  fireEvent.change(screen.getByLabelText("Upload image"), { target: { files: [file] } });
+  await screen.findByText("Image selected. Press SAVE to keep your changes.");
+  fireEvent.click(screen.getByRole("button", { name: "SAVE" }));
+  expect(await screen.findByText("Profile saved.")).toBeVisible();
+
+  const [, update] = fetchBurak.mock.calls.find(([url]) => url === "/api/member/update")!;
+  expect(Array.from((update!.body as FormData).entries())).toEqual([["memberImage", file]]);
+  expect(accountButton.querySelector("img")).toHaveAttribute("src", "/uploads/members/updated.png");
+  expect(screen.getByLabelText("Address")).toHaveValue("");
+  expect(screen.getByLabelText("Description")).toHaveValue("");
 });
 test("FAQ expands and contact does not claim a message was sent", () => {
   open("/help");
