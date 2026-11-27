@@ -2,6 +2,7 @@ import { asRecord, isObjectId, requestApi, uploadImage } from "./client"
 
 export type Member = {
   id: string
+  type: "ADMIN" | "USER" | "RESTAURANT" | null
   name: string
   phone: string
   address: string
@@ -24,19 +25,27 @@ export class MemberApiError extends Error {
 
 function readMember(value: unknown): Member {
   const member = asRecord(value)
-  const { _id: id } = member
+  const { _id: id, memberImage, memberType: type } = member
   if (!isObjectId(id) || typeof member.memberNick !== "string") {
     throw new Error("The Burak API returned invalid member data.")
   }
   return {
     id,
+    type: type === "ADMIN" || type === "USER" || type === "RESTAURANT" ? type : null,
     name: member.memberNick,
     phone: typeof member.memberPhone === "string" ? member.memberPhone : "",
     address:
       typeof member.memberAddress === "string" ? member.memberAddress : "",
     description: typeof member.memberDesc === "string" ? member.memberDesc : "",
-    image: uploadImage(member.memberImage) || "/icons/default-user.svg",
+    image: memberAvatar(memberImage),
   }
+}
+
+function memberAvatar(value: unknown): string {
+  if (typeof value !== "string") return "/icons/default-user.svg"
+  const path = value.trim().replace(/^\.\//, "")
+  const isFilename = /^[\w.-]+\.(?:jpe?g|png|webp|gif|avif)$/i.test(path)
+  return uploadImage(isFilename ? `uploads/members/${path}` : path) ?? "/icons/default-user.svg"
 }
 
 async function checkStatus(response: Response, fallback: string) {

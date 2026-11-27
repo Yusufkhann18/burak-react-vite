@@ -7,7 +7,7 @@ import {
 } from "@mui/material"
 import { useEffect, useRef, useState } from "react"
 import type { KeyboardEvent } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, Redirect, useLocation } from "react-router-dom"
 import { getOrders, OrderApiError, updateOrder } from "../../api/orders"
 import type { Order } from "../../api/orders"
 import { useAuth } from "../../auth/AuthProvider"
@@ -61,6 +61,8 @@ export default function OrdersPage() {
   const { member, openLogin, status } = useAuth()
   const { key: routeKey } = useLocation()
 
+  if (status === "guest") return <Redirect to="/" />
+
   if (!member) {
     return (
       <main className="inner-page orders-page">
@@ -70,7 +72,7 @@ export default function OrdersPage() {
             <output>Checking your session…</output>
           ) : (
             <>
-              <p>Log in to view your orders.</p>
+              <p role="alert">Could not check your session. Log in to view your orders.</p>
               <button type="button" className="page-button" onClick={openLogin}>
                 Log in
               </button>

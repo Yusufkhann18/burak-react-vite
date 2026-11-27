@@ -18,6 +18,7 @@ const rice = {
 };
 const account = {
   _id: "64ab12345678901234567804",
+  memberType: "USER",
   memberNick: "Ali",
   memberPhone: "821012345678",
   memberAddress: "Busan",
@@ -75,8 +76,20 @@ const fetchBurak = vi.fn<(input: string, init?: RequestInit) => Promise<Response
     return new Response(null, { status: 204 });
   }
   if (pathname === "/api/member/update" && init?.method === "POST" && signedIn) {
-    const { memberNick } = JSON.parse(String(init.body));
-    signedIn = { ...signedIn, memberNick };
+    const submitted = init.body instanceof FormData
+      ? Object.fromEntries(init.body)
+      : JSON.parse(String(init.body));
+    const { memberNick, memberPhone, memberAddress, memberDesc, memberImage } = submitted;
+    signedIn = {
+      ...signedIn,
+      memberNick,
+      memberPhone,
+      memberAddress,
+      memberDesc,
+      memberImage: memberImage instanceof File
+        ? "uploads/members/updated.png"
+        : signedIn.memberImage,
+    };
     return Response.json(signedIn);
   }
   if (pathname === "/api/member/restaurant") {
@@ -305,21 +318,22 @@ test("cancelling a paused order persists the cancellation and refreshes the list
   await waitFor(() => expect(screen.queryByRole("heading", { name: "Kebuli Rice" })).not.toBeInTheDocument());
   expect(storedOrders[0]?.orderStatus).toBe("DELETE");
 });
-test("guests cannot load or change another member's orders", async () => {
-  open("/orders");
-  expect(await screen.findByText("Log in to view your orders.")).toBeVisible();
-  expect(within(screen.getByRole("main")).getByRole("button", { name: "Log in" })).toBeVisible();
+test.each(["/orders", "/member-page"])("guests visiting %s go back to the home page", async (path) => {
+  open(path);
+  expect(await screen.findByText("World's Most Delicious Cousine")).toBeVisible();
   expect(fetchBurak.mock.calls.some(([url]) => url.startsWith("/api/order/"))).toBe(false);
 });
-test("guest profile edits are persisted in the browser", async () => {
-  open("/member-page");
-  fireEvent.change(await screen.findByLabelText("Nickname"), { target: { value: "Ali" } });
-  fireEvent.click(screen.getByRole("button", { name: "SAVE" }));
-  expect(screen.getByRole("heading", { name: "Ali" })).toBeInTheDocument();
-  expect(JSON.parse(localStorage.getItem("burak-profile-v1")!).name).toBe("Ali");
+test("orders show the signed-in member's role, avatar and address", async () => {
+  signedIn = { ...account, memberType: "RESTAURANT", memberImage: "old-avatar.png" };
+  open("/orders");
+  const profile = (await screen.findByRole("heading", { name: "Ali" })).closest(".profile-card")!;
+  expect(within(profile as HTMLElement).getByText("RESTAURANT")).toBeVisible();
+  expect(within(profile as HTMLElement).getByText("Busan")).toBeVisible();
+  expect(profile.querySelector(".profile-avatar > img")).toHaveAttribute("src", "/uploads/members/old-avatar.png");
+  expect(profile.querySelector(".profile-badge")).toHaveAttribute("src", "/icons/restaurant.svg");
 });
 test("logs in from the navbar, saves to the member API, and logs out", async () => {
-  open("/member-page");
+  open("/");
   const login = await screen.findByRole("button", { name: "Login" });
   await waitFor(() => expect(login).toBeEnabled());
   fireEvent.click(login);
@@ -329,11 +343,37 @@ test("logs in from the navbar, saves to the member API, and logs out", async () 
   fireEvent.click(within(dialog).getByRole("button", { name: "Log in" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   expect(await screen.findByRole("button", { name: "Account for Ali" })).toBeVisible();
-  fireEvent.change(screen.getByLabelText("Nickname"), { target: { value: "Ali Updated" } });
+  fireEvent.click(screen.getByRole("link", { name: "My Page" }));
+  fireEvent.change(await screen.findByLabelText("Nickname"), { target: { value: "Ali Updated" } });
+  fireEvent.change(screen.getByLabelText("Description"), { target: { value: "  " } });
+  const save = screen.getByRole("button", { name: "SAVE" });
+  fireEvent.click(save);
+  expect(screen.getByText("Complete all required fields.")).toBeVisible();
+  expect(fetchBurak.mock.calls.some(([url]) => url === "/api/member/update")).toBe(false);
+
+  fireEvent.change(screen.getByLabelText("Description"), { target: { value: "A short introduction" } });
+  const fileInput = screen.getByLabelText(/upload image/i);
+  const invalidImage = new File(["test image"], "avatar.gif", { type: "image/gif" });
+  fireEvent.change(fileInput, { target: { files: [invalidImage] } });
+  expect(screen.getByText("Choose a JPG, JPEG, or PNG image up to 2 MB.")).toBeVisible();
+  expect(screen.getByRole("img", { name: "Profile preview" })).toHaveAttribute("src", "/uploads/members/ali.png");
+
+  const avatar = new File(["test image"], "avatar.png", { type: "image/png" });
+  fireEvent.change(fileInput, { target: { files: [avatar] } });
+  await waitFor(() => expect(screen.getByRole("img", { name: "Profile preview" })).toHaveAttribute(
+    "src", expect.stringMatching(/^data:image\/png/),
+  ));
   fireEvent.click(screen.getByRole("button", { name: "SAVE" }));
   expect(await screen.findByRole("heading", { name: "Ali Updated" })).toBeVisible();
+  const [, update] = fetchBurak.mock.calls.find(([url]) => url === "/api/member/update")!;
+  expect(update).toMatchObject({ credentials: "include", body: expect.any(FormData) });
+  const body = update!.body as FormData;
+  expect(body.get("memberImage")).toBe(avatar);
+  expect(screen.getByText("A short introduction", { selector: "p" })).toBeVisible();
   expect(localStorage.getItem("burak-profile-v1")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Account for Ali Updated" }));
+  const accountButton = screen.getByRole("button", { name: "Account for Ali Updated" });
+  expect(accountButton.querySelector("img")).toHaveAttribute("src", "/uploads/members/updated.png");
+  fireEvent.click(accountButton);
   fireEvent.click(await screen.findByRole("menuitem", { name: "Log out" }));
   expect(await screen.findByRole("button", { name: "Login" })).toBeVisible();
 });

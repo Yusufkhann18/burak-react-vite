@@ -89,6 +89,7 @@
   box-shadow: 0 4px 14px #00000015;
   text-align: center;
   align-self: start;
+  overflow-wrap: anywhere;
 }
 .profile-avatar {
   position: relative;
@@ -115,7 +116,6 @@
   font-size: 28px;
   font-weight: 600;
   margin: 10px 0 0;
-  overflow-wrap: anywhere;
 }
 .profile-role {
   margin: 3px 0 18px;
@@ -131,11 +131,11 @@
   padding-top: 16px;
   margin: 20px 0 0;
   font-size: 16px;
-  overflow-wrap: anywhere;
 }
 .profile-address img {
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
 }
 .other-navbar {
   background-image: url("/img/home/banner.webp");

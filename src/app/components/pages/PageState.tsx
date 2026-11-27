@@ -7,20 +7,6 @@ export type BasketItem = { id: string; quantity: number };
 type CatalogStatus = "loading" | "ready" | "error";
 type Catalog = { products: Product[]; status: CatalogStatus; attempt: number };
 
-export type Profile = {
-  name: string;
-  description: string;
-  phone: string;
-  address: string;
-  image: string;
-};
-export const defaultProfile: Profile = {
-  name: "Justin",
-  description: "The best man",
-  phone: "8210 2469 4424",
-  address: "South Korea, Busan",
-  image: "/img/pages/profile.webp",
-};
 const key = "burak-page-basket-v1";
 function readBasket(): BasketItem[] {
   try {
@@ -40,15 +26,6 @@ function readBasket(): BasketItem[] {
   } catch {
     return [];
   }
-}
-export function readProfile(): Profile {
-  try {
-    const p = JSON.parse(localStorage.getItem("burak-profile-v1") || "null");
-    if (p && Object.keys(defaultProfile).every((k) => typeof p[k] === "string")) return p;
-  } catch {
-    /* Use design defaults when storage is unavailable. */
-  }
-  return defaultProfile;
 }
 const Context = createContext<{
   basket: BasketItem[];

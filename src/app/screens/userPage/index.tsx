@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { MemberApiError, updateMember, type Member } from "../../api/member";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { Redirect } from "react-router-dom";
+import { MemberApiError, updateMember } from "../../api/member";
+import type { Member } from "../../api/member";
 import { useAuth } from "../../auth/AuthProvider";
-import { readProfile } from "../../components/pages/PageState";
 import { ProfileCard } from "../../components/pages/ProfileCard";
 import "../../../css/user.css";
+
 export function UserPage() {
-  const { member, status } = useAuth();
+  const { member, status, openLogin } = useAuth();
+  if (member) return <ProfileSettings key={member.id} member={member} />;
+  if (status === "guest") return <Redirect to="/" />;
   if (status === "loading") {
     return (
       <main className="inner-page user-page">
@@ -13,98 +18,120 @@ export function UserPage() {
       </main>
     );
   }
-  return <ProfileSettings key={member?.id ?? "guest"} member={member} />;
+  return (
+    <main className="inner-page user-page">
+      <div className="page-container">
+        <p role="alert">Could not check your session.</p>
+        <button className="page-button" type="button" onClick={openLogin}>Log in</button>
+      </div>
+    </main>
+  );
 }
 
-function ProfileSettings({ member }: { member: Member | null }) {
+function ProfileSettings({ member }: { member: Member }) {
   const { setMember, openLogin } = useAuth();
-  const [profile, setProfile] = useState(() => member ?? readProfile());
-  const [saved, setSaved] = useState(profile);
+  const [profile, setProfile] = useState(member);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [imageFile, setImageFile] = useState<File>();
+  const [image, setImage] = useState<{ file: File; preview: string }>();
+  const imageInput = useRef<HTMLInputElement>(null);
+  const imageReader = useRef<FileReader | null>(null);
   const saveRequest = useRef<AbortController | null>(null);
   const busy = loading || saving;
-  useEffect(() => () => saveRequest.current?.abort(), []);
+  useEffect(() => () => {
+    imageReader.current?.abort();
+    saveRequest.current?.abort();
+  }, []);
 
   function upload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!["image/jpeg", "image/png"].includes(file.type) || file.size > 2 * 1024 * 1024) {
-      setMessage("Choose a JPG or PNG image smaller than 2 MB.");
-      event.target.value = "";
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file || imageReader.current || saveRequest.current) return;
+    const validExtension = /\.(jpe?g|png)$/i.test(file.name);
+    const validType = !file.type || ["image/jpeg", "image/jpg", "image/png"].includes(file.type);
+    if (!validExtension || !validType || file.size > 2 * 1024 * 1024) {
+      setMessage("Choose a JPG, JPEG, or PNG image up to 2 MB.");
+      setImage(undefined);
+      input.value = "";
       return;
     }
     setLoading(true);
     const reader = new FileReader();
+    imageReader.current = reader;
     reader.onload = () => {
-      setProfile((p) => ({ ...p, image: String(reader.result) }));
-      setImageFile(file);
+      setImage({ file, preview: String(reader.result) });
       setMessage("Image selected. Press SAVE to keep your changes.");
-      setLoading(false);
     };
     reader.onerror = () => {
+      setImage(undefined);
       setMessage("The image could not be read. Please try again.");
+      input.value = "";
+    };
+    reader.onloadend = () => {
+      imageReader.current = null;
       setLoading(false);
     };
     reader.readAsDataURL(file);
   }
+
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
-    if (member) {
-      const request = new AbortController();
-      saveRequest.current = request;
-      setSaving(true);
-      setMessage("");
-      try {
-        const updated = await updateMember(profile, imageFile, request.signal);
-        if (request.signal.aborted) return;
-        setMember(updated);
-        setProfile(updated);
-        setSaved(updated);
-        setImageFile(undefined);
-        setMessage("Profile saved.");
-      } catch (error) {
-        if (request.signal.aborted) return;
-        if (error instanceof MemberApiError && (error.status === 401 || error.status === 403)) {
-          setMember(null);
-          openLogin();
-        } else {
-          setMessage(error instanceof MemberApiError ? error.message : "Could not save your profile.");
-        }
-      } finally {
-        if (!request.signal.aborted) setSaving(false);
-        saveRequest.current = null;
-      }
+    if (busy || imageReader.current || saveRequest.current) return;
+    const fields = {
+      name: profile.name.trim(),
+      phone: profile.phone.trim(),
+      address: profile.address.trim(),
+      description: profile.description.trim(),
+    };
+    if (Object.values(fields).some((value) => !value)) {
+      setMessage("Complete all required fields.");
       return;
     }
 
+    const request = new AbortController();
+    saveRequest.current = request;
+    setSaving(true);
+    setMessage("");
     try {
-      localStorage.setItem("burak-profile-v1", JSON.stringify(profile));
-      setSaved(profile);
-      setMessage("Profile saved in this browser.");
-    } catch {
-      setMessage("Could not save the profile. Try a smaller image or allow browser storage.");
+      const updated = await updateMember(fields, image?.file, request.signal);
+      if (request.signal.aborted) return;
+      setMember(updated);
+      setProfile(updated);
+      setImage(undefined);
+      if (imageInput.current) imageInput.current.value = "";
+      setMessage("Profile saved.");
+    } catch (error) {
+      if (request.signal.aborted) return;
+      if (error instanceof MemberApiError && (error.status === 401 || error.status === 403)) {
+        setMember(null);
+        openLogin();
+      } else {
+        setMessage(error instanceof MemberApiError ? error.message : "Could not save your profile.");
+      }
+    } finally {
+      if (!request.signal.aborted) setSaving(false);
+      saveRequest.current = null;
     }
   }
+
   return (
     <main className="inner-page user-page">
       <div className="page-container user-layout">
-        <ProfileCard profile={saved} description />
-        <form className="profile-form" onSubmit={save}>
+        <ProfileCard description />
+        <form className="profile-form" aria-busy={busy} onSubmit={save}>
           <h1 className="sr-only">My profile</h1>
           <div className="profile-upload">
-            <img src={profile.image} alt="Profile preview" />
+            <img src={image?.preview ?? member.image} alt="Profile preview" />
             <div>
               <label className="upload-button" htmlFor="profile-image">
                 Upload image
               </label>
               <input
                 id="profile-image"
+                ref={imageInput}
                 type="file"
-                accept="image/jpeg,image/png"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                 onChange={upload}
                 disabled={busy}
               />
@@ -127,6 +154,7 @@ function ProfileSettings({ member }: { member: Member | null }) {
             <label>
               Phone
               <input
+                required
                 type="tel"
                 maxLength={30}
                 autoComplete="tel"
@@ -138,6 +166,7 @@ function ProfileSettings({ member }: { member: Member | null }) {
             <label>
               Address
               <input
+                required
                 maxLength={200}
                 autoComplete="street-address"
                 disabled={busy}
@@ -148,6 +177,7 @@ function ProfileSettings({ member }: { member: Member | null }) {
             <label>
               Description
               <textarea
+                required
                 rows={4}
                 maxLength={500}
                 disabled={busy}

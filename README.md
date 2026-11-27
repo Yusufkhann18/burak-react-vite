@@ -24,6 +24,11 @@ API. Serve the frontend and API through the same origin to use the session cooki
 issued by Burak. A separate API origin must allow credentialed requests from the
 exact frontend origin and use compatible cookie settings.
 
+My Page and Orders require a signed-in member. My Page saves the nickname,
+phone, address, and description through the member API and accepts JPG or PNG
+avatars of up to 2 MB. Saved member details appear in the account menu and profile
+cards.
+
 Checkout creates an order through Burak. The backend supplies prices and
 delivery totals, and each signed-in member can view and update their own order
 statuses. Processing records an order status change without charging a card.
